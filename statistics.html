@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>110 Game Statistics</title>
+    <link rel="stylesheet" href="style.css?v=59">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        .stats-header {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .stats-header h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 36px;
+            color: #d4af37;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 0 0 10px 0;
+        }
+        .stats-header a {
+            color: #ccc;
+            text-decoration: none;
+        }
+        .stats-header a:hover {
+            color: #d4af37;
+        }
+        .stats-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .stats-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .stats-section h2 {
+            color: #d4af37;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding-bottom: 10px;
+        }
+        .stats-section p {
+            margin: 10px 0;
+            color: #f0f0f0;
+        }
+        .game-list {
+            list-style: none;
+            padding: 0;
+        }
+        .game-item {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid #d4af37;
+        }
+        .game-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+        #game-message {
+            display: none;
+            text-align: center;
+            padding: 15px;
+            margin: 15px auto;
+            max-width: 800px;
+            border-radius: 8px;
+            background: rgba(220, 38, 38, 0.2);
+        }
+        .status-completed {
+            color: #22c55e;
+        }
+        .status-progress {
+            color: #eab308;
+        }
+    </style>
+</head>
+<body class="statistics-page">
+    <div class="stats-header">
+        <h1>📊 110 Game Statistics</h1>
+        <a href="index.html">← Back to Game</a>
+    </div>
+
+    <div class="stats-container">
+        <div id="game-details" class="stats-section">
+            <h2>Game Details</h2>
+            <p>Select a game below to see round-by-round details.</p>
+        </div>
+
+        <div id="game-history" class="stats-section">
+            <h2>Game History</h2>
+            <p>Loading...</p>
+        </div>
+
+        <div id="overall-stats" class="stats-section">
+            <h2>Overall Statistics</h2>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <div id="game-message"></div>
+
+    <script src="statistics.js?v=2"></script>
+</body>
+</html>

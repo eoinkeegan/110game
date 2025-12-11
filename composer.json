@@ -1,0 +1,8 @@
+{
+    "require-dev": {
+        "phpunit/phpunit": "^12.1"
+    },
+    "require": {
+        "cboden/ratchet": "^0.4.4"
+    }
+}

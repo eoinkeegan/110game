@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>110</title>
+    <link rel="stylesheet" href="style.css?v=74">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        .game-title {
+            text-align: center;
+            padding: 30px 20px 10px;
+        }
+        .game-title h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 48px;
+            color: #d4af37;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 0;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .game-title h1 {
+            cursor: pointer;
+        }
+        .game-title h1:hover {
+            color: #e8c848;
+        }
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #2a2a2a;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 320px;
+            border: 1px solid #d4af37;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        .modal-content h3 {
+            color: #d4af37;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .modal-content button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modal-content .btn-primary {
+            background: #d4af37;
+            color: #1a1a1a;
+        }
+        .modal-content .btn-secondary {
+            background: #444;
+            color: #fff;
+        }
+        .modal-content button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            z-index: 9999;
+            pointer-events: none;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        /* Emoji reactions - collapsible panel */
+        .emoji-panel {
+            position: fixed;
+            bottom: 170px;
+            right: 10px;
+            z-index: 200;
+        }
+        .emoji-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #d4af37;
+            background: rgba(0,0,0,0.85);
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .emoji-toggle:hover {
+            transform: scale(1.1);
+            background: rgba(40,40,40,0.95);
+        }
+        .emoji-buttons {
+            display: none;
+            position: absolute;
+            bottom: 50px;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            border-radius: 12px;
+            padding: 8px;
+            border: 1px solid #333;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .emoji-buttons.expanded {
+            display: flex;
+        }
+        .emoji-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(60,60,60,0.8);
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .emoji-btn:hover {
+            transform: scale(1.15);
+            background: rgba(100,100,100,0.9);
+        }
+        .emoji-reaction-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            padding: 20px 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 9999;
+            animation: reaction-pop 2.5s ease-out forwards;
+        }
+        .reaction-emoji {
+            font-size: 60px;
+            display: block;
+        }
+        .reaction-player {
+            font-size: 14px;
+            color: #ccc;
+            margin-top: 5px;
+            display: block;
+        }
+        @keyframes reaction-pop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+        }
+        
+        .game-title p {
+            color: #ccc;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        /* Server Wake-up Screen */
+        .server-status-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .server-status-screen.visible {
+            display: block;
+        }
+        .server-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        .server-status-screen h2 {
+            color: #d4af37;
+            margin-bottom: 15px;
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+        .server-status-screen p {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .wake-btn {
+            background: linear-gradient(135deg, #d4af37, #c49b2f);
+            color: #1a1a1a;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+        .wake-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        }
+        .wake-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .progress-container {
+            margin: 30px 0;
+            display: none;
+        }
+        .progress-container.visible {
+            display: block;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d4af37, #f0d060);
+            width: 0%;
+            transition: width 0.5s ease-out;
+            border-radius: 4px;
+        }
+        .progress-text {
+            color: #888;
+            font-size: 0.9em;
+        }
+        .server-tip {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        .server-tip p {
+            margin: 0;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        /* Sort cards button */
+        .sort-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+            color: #bbb;
+            border: 1px solid #444;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .sort-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #ddd;
+        }
+        .sort-btn-active {
+            background: rgba(100, 140, 100, 0.15);
+            border-color: #6a8a6a;
+            color: #8aaa8a;
+        }
+        .sort-btn-active:hover {
+            background: rgba(100, 140, 100, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-title">
+        <div onclick="handleHeaderClick()" style="cursor: pointer; display: inline-block;">
+            <img src="assets/logo-110.svg" alt="110" style="height: 60px; vertical-align: middle;">
+        </div>
+    </div>
+    </div>
+    
+    <!-- Server Wake-up Screen (shown when server is sleeping) -->
+    <div id="server-status-screen" class="server-status-screen">
+        <div class="server-icon">💤</div>
+        <h2>Game Server is Sleeping</h2>
+        <p>The server powers down when not in use to save costs.<br>Wake it up to start playing!</p>
+        
+        <button id="wake-server-btn" class="wake-btn" onclick="wakeUpServer()">
+            🚀 Wake Up Server
+        </button>
+        
+        <div id="progress-container" class="progress-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-text" class="progress-text">Starting server...</p>
+        </div>
+        
+        <div class="server-tip">
+            <p>💡 This usually takes 30-60 seconds. The server will automatically go back to sleep after a period of inactivity.</p>
+        </div>
+    </div>
+    
+    <!-- Modal for leaving game -->
+    <div id="leave-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>🃏 Leave Game?</h3>
+            <p style="color: #ccc; margin-bottom: 20px;">You're currently in a game.</p>
+            <button class="btn-primary" onclick="closeModal()">Continue Playing</button>
+            <button class="btn-secondary" onclick="returnToLobby(); closeModal();">Leave Game</button>
+        </div>
+    </div>
+    
+    
+    <!-- Emoji reaction panel (collapsible) -->
+    <div id="emoji-panel" class="emoji-panel" style="display: none;">
+        <div id="emoji-buttons" class="emoji-buttons">
+            <button class="emoji-btn" onclick="sendReaction('👍'); collapseEmojiPanel();">👍</button>
+            <button class="emoji-btn" onclick="sendReaction('👎'); collapseEmojiPanel();">👎</button>
+            <button class="emoji-btn" onclick="sendReaction('😂'); collapseEmojiPanel();">😂</button>
+            <button class="emoji-btn" onclick="sendReaction('😮'); collapseEmojiPanel();">😮</button>
+            <button class="emoji-btn" onclick="sendReaction('👏'); collapseEmojiPanel();">👏</button>
+            <button class="emoji-btn" onclick="sendReaction('⏰'); collapseEmojiPanel();">⏰</button>
+        </div>
+        <button class="emoji-toggle" onclick="toggleEmojiPanel()" title="Reactions">😀</button>
+    </div>
+    
+    <div id="game-container">
+        <form id="game-form">
+            <input type="text" id="player-name" placeholder="Enter your name" required>
+            <input type="text" id="game-code" placeholder="Enter game code (to join)">
+            <button type="button" id="create-game">Create Game</button>
+            <button type="button" id="join-game">Join Game</button>
+        </form>
+        
+        <!-- Lobby area shown after creating/joining -->
+        <div id="lobby-area" style="display: none;">
+            <h3>Game Lobby</h3>
+            <p>Game Code: <strong id="display-game-code"></strong></p>
+            <p>Share this code with other players!</p>
+            <div id="player-list">
+                <h4>Players:</h4>
+                <ul id="players-ul"></ul>
+            </div>
+            <button type="button" id="start-game" style="display: none;">Start Game (Deal Cards)</button>
+            <button type="button" id="leave-game" style="margin-left: 10px;">Leave Game</button>
+        </div>
+    </div>
+
+    <div id="bidding-area" style="display: none;">
+        <!-- Bidding process will be displayed here -->
+    </div>
+
+    <div id="gameplay-container" style="display: none;">
+        <div id="trick-area">
+            <!-- The trick area will display cards played in the current trick -->
+        </div>
+        <!-- Game message - right after trick area for visibility -->
+        <div id="game-message"></div>
+        <div id="player-hands">
+            <!-- Player hands and Kitty cards will be displayed here -->
+        </div>
+        <div id="trump-selection">
+            <!-- Dropdown or buttons for selecting trump suit -->
+        </div>
+        <div id="confirm-selection">
+            <!-- Confirm button for submitting selected cards and trump suit -->
+        </div>
+    </div>
+
+    <!-- Persistent Scoreboard -->
+    <div id="scoreboard" style="display: none;">
+        <div id="scoreboard-content"></div>
+    </div>
+
+    <script src="app-config.js"></script>
+    <script>
+        // ============== SERVER STATUS & WAKE-UP ==============
+        let serverReady = false;
+        
+        async function checkAndShowServerStatus() {
+            const serverScreen = document.getElementById('server-status-screen');
+            const gameContainer = document.getElementById('game-container');
+            
+            // If no Lambda URL configured, assume always on (local dev)
+            if (!window.APP_CONFIG?.LAMBDA_URL) {
+                serverReady = true;
+                serverScreen.classList.remove('visible');
+                gameContainer.style.display = 'block';
+                return true;
+            }
+            
+            // Check server status via health endpoint first
+            try {
+                const healthCheck = await fetch(window.getApiUrl('health'), {
+                    signal: AbortSignal.timeout(5000)
+                });
+                if (healthCheck.ok) {
+                    serverReady = true;
+                    serverScreen.classList.remove('visible');
+                    gameContainer.style.display = 'block';
+                    return true;
+                }
+            } catch (e) {
+                // Server not responding
+            }
+            
+            // Check EC2 status via Lambda
+            const status = await window.checkServerStatus();
+            
+            if (status.running) {
+                // EC2 is running, try health check again
+                try {
+                    const healthCheck = await fetch(window.getApiUrl('health'), {
+                        signal: AbortSignal.timeout(5000)
+                    });
+                    if (healthCheck.ok) {
+                        serverReady = true;
+                        serverScreen.classList.remove('visible');
+                        gameContainer.style.display = 'block';
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            
+            // Server not ready, show wake-up screen
+            serverReady = false;
+            serverScreen.classList.add('visible');
+            gameContainer.style.display = 'none';
+            return false;
+        }
+        
+        async function wakeUpServer() {
+            const btn = document.getElementById('wake-server-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const serverIcon = document.querySelector('.server-icon');
+            
+            // Disable button and show progress
+            btn.disabled = true;
+            btn.textContent = '⏳ Starting...';
+            progressContainer.classList.add('visible');
+            serverIcon.textContent = '⚡';
+            
+            // Request server start
+            const startResult = await window.startGameServer();
+            
+            if (!startResult.success && !startResult.message?.includes('already running')) {
+                progressText.textContent = `Error: ${startResult.message}`;
+                progressText.style.color = '#ef4444';
+                btn.disabled = false;
+                btn.textContent = '🔄 Try Again';
+                serverIcon.textContent = '❌';
+                return;
+            }
+            
+            // Wait for server to be ready
+            const ready = await window.waitForServerReady((update) => {
+                progressFill.style.width = `${update.progress}%`;
+                progressText.textContent = update.message;
+                
+                if (update.phase === 'booting') {
+                    serverIcon.textContent = '🔄';
+                } else if (update.phase === 'starting') {
+                    serverIcon.textContent = '🖥️';
+                }
+            });
+            
+            if (ready) {
+                serverReady = true;
+                serverIcon.textContent = '✅';
+                progressText.textContent = 'Server ready! Loading game...';
+                progressFill.style.width = '100%';
+                
+                // Brief pause then show game
+                await new Promise(r => setTimeout(r, 1000));
+                
+                document.getElementById('server-status-screen').classList.remove('visible');
+                document.getElementById('game-container').style.display = 'block';
+                
+                // Try to restore session
+                restoreSession();
+            } else {
+                serverIcon.textContent = '⚠️';
+                progressText.textContent = 'Server took too long to start. Please try again.';
+                progressText.style.color = '#fbbf24';
+                btn.disabled = false;
+                btn.textContent = '🔄 Try Again';
+            }
+        }
+        
+        // ============== API CONFIGURATION ==============
+        // Use SQLite backend (no MySQL needed)
+        const API_URL = 'game-sqlite.php';
+        
+        // ============== GAME STATE VARIABLES ==============
+        let currentPlayerId = null; // Store the current player's ID
+        let gameId = null; // Store the game ID (numeric)
+        let gameCode = null; // Store the game code (6-char string)
+        let selectedCards = []; // Store the selected cards
+        let trumpSuit = null; // Store the selected trump suit
+        let isGameCreator = false; // Track if current player created the game
+        let pollingInterval = null; // For polling game state
+        let sortCards = false; // Card sorting preference
+        let soundEnabled = true; // Sound effects toggle
+        let ws = null; // WebSocket connection
+        let wsReconnectAttempts = 0;
+        const MAX_WS_RECONNECT = 10;
+        const WS_RECONNECT_BASE_DELAY = 1000;
+        
+        // ============== SOUND EFFECTS ==============
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+        
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'deal':
+                    oscillator.frequency.value = 200;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                    break;
+                case 'play':
+                    oscillator.frequency.value = 400;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.15);
+                    break;
+                case 'win':
+                    // Play a pleasant chord
+                    [523, 659, 784].forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.value = freq;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                        osc.start(audioCtx.currentTime + i * 0.1);
+                        osc.stop(audioCtx.currentTime + 0.6);
+                    });
+                    return;
+                case 'lose':
+                    oscillator.frequency.value = 200;
+                    oscillator.type = 'sawtooth';
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                    break;
+                case 'bid':
+                    oscillator.frequency.value = 600;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                    break;
+                case 'click':
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.05);
+                    break;
+            }
+        }
+        
+        // ============== CONFETTI ==============
+        function createConfetti() {
+            const colors = ['#d4af37', '#22c55e', '#3b82f6', '#ef4444', '#a855f7'];
+            const confettiCount = 100;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+                
+                // Remove after animation
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+        
+        function celebrate() {
+            playSound('win');
+            createConfetti();
+        }
+        
+        // ============== CARD SORTING ==============
+        function sortCardsByRank(cards, currentTrumpSuit) {
+            // Get card value based on trump - higher value = more valuable
+            // Primary sort: trump cards first, then by rank (not grouped by suit)
+            function getCardValue(card, trumpSuit) {
+                if (card === 'Joker') return 1013; // 3rd highest trump
+                
+                const suit = card[0];
+                const rank = card.substring(1);
+                const isRed = (suit === 'H' || suit === 'D');
+                const isTrump = (suit === trumpSuit) || (suit === 'H' && rank === 'A'); // Trump suit or Ace of Hearts
+                
+                if (isTrump || card === 'Joker') {
+                    // Trump ranking: 5 > J > Joker > A♥ > A > K > Q > number cards
+                    if (suit === trumpSuit && rank === '5') return 1015;
+                    if (suit === trumpSuit && rank === 'J') return 1014;
+                    if (suit === 'H' && rank === 'A') return 1012; // Ace of Hearts always 4th
+                    if (suit === trumpSuit && rank === 'A') return 1011;
+                    if (suit === trumpSuit && rank === 'K') return 1010;
+                    if (suit === trumpSuit && rank === 'Q') return 1009;
+                    
+                    // Trump number cards
+                    if (isRed) {
+                        // Red trump: 10 > 9 > 8 > 7 > 6 > 4 > 3 > 2
+                        const redTrumpRanks = { '10': 1008, '9': 1007, '8': 1006, '7': 1005, '6': 1004, '4': 1003, '3': 1002, '2': 1001 };
+                        return redTrumpRanks[rank] || 1000;
+                    } else {
+                        // Black trump: 2 > 3 > 4 > 6 > 7 > 8 > 9 > 10
+                        const blackTrumpRanks = { '2': 1008, '3': 1007, '4': 1006, '6': 1005, '7': 1004, '8': 1003, '9': 1002, '10': 1001 };
+                        return blackTrumpRanks[rank] || 1000;
+                    }
+                }
+                
+                // Non-trump cards - sort by RANK first, then suit as tiebreaker
+                // Use rank * 10 + suit tiebreaker so rank is primary
+                const suitTiebreaker = { 'H': 3, 'D': 2, 'C': 1, 'S': 0 }; // Just for consistent ordering of same rank
+                
+                if (isRed) {
+                    // Red non-trump: K > Q > J > 10 > 9 > 8 > 7 > 6 > 5 > 4 > 3 > 2 > A
+                    const redRanks = { 'K': 13, 'Q': 12, 'J': 11, '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'A': 1 };
+                    return (redRanks[rank] || 0) * 10 + suitTiebreaker[suit];
+                } else {
+                    // Black non-trump: K > Q > J > A > 2 > 3 > 4 > 5 > 6 > 7 > 8 > 9 > 10
+                    const blackRanks = { 'K': 13, 'Q': 12, 'J': 11, 'A': 10, '2': 9, '3': 8, '4': 7, '5': 6, '6': 5, '7': 4, '8': 3, '9': 2, '10': 1 };
+                    return (blackRanks[rank] || 0) * 10 + suitTiebreaker[suit];
+                }
+            }
+            
+            return [...cards].sort((a, b) => {
+                return getCardValue(b, currentTrumpSuit) - getCardValue(a, currentTrumpSuit);
+            });
+        }
+        
+        function toggleSortCards() {
+            sortCards = !sortCards;
+            playSound('click');
+            fetchGameState(); // Refresh to apply sorting (button updated when hand is re-rendered)
+        }
+        
+        // ============== EMOJI REACTIONS ==============
+        function sendReaction(emoji) {
+            playSound('click');
+            // Show reaction locally
+            showReaction(emoji, 'You');
+            
+            // Send to other players via backend
+            if (gameId) {
+                fetch(`${API_URL}?endpoint=sendReaction`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `gameId=${gameId}&playerId=${currentPlayerId}&emoji=${encodeURIComponent(emoji)}`
+                }).catch(err => console.log('Reaction send failed:', err));
+            }
+        }
+        
+        function showReaction(emoji, playerName) {
+            const reactionDiv = document.createElement('div');
+            reactionDiv.className = 'emoji-reaction-display';
+            reactionDiv.innerHTML = `<span class="reaction-emoji">${emoji}</span><span class="reaction-player">${playerName}</span>`;
+            document.body.appendChild(reactionDiv);
+            
+            setTimeout(() => reactionDiv.remove(), 2500);
+        }
+        
+        let lastReactionTimestamp = 0;
+        function checkForReactions(data) {
+            if (data.lastReaction && data.lastReaction.timestamp > lastReactionTimestamp) {
+                lastReactionTimestamp = data.lastReaction.timestamp;
+                // Only show if it's not from us
+                if (data.lastReaction.playerId != currentPlayerId) {
+                    showReaction(data.lastReaction.emoji, data.lastReaction.playerName);
+                }
+            }
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            if (soundEnabled) {
+                btn.classList.add('active');
+                btn.innerHTML = '🔊 Sound';
+                playSound('click');
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '🔇 Muted';
+            }
+        }
+        
+        function showGameControls() {
+            document.getElementById('emoji-panel').style.display = 'block';
+        }
+        
+        function hideGameControls() {
+            document.getElementById('emoji-panel').style.display = 'none';
+            collapseEmojiPanel();
+        }
+        
+        function toggleEmojiPanel() {
+            const buttons = document.getElementById('emoji-buttons');
+            const toggle = document.querySelector('.emoji-toggle');
+            buttons.classList.toggle('expanded');
+            toggle.textContent = buttons.classList.contains('expanded') ? '✕' : '😀';
+        }
+        
+        function collapseEmojiPanel() {
+            const buttons = document.getElementById('emoji-buttons');
+            const toggle = document.querySelector('.emoji-toggle');
+            buttons.classList.remove('expanded');
+            if (toggle) toggle.textContent = '😀';
+        }
+        
+        // ============== WEBSOCKET RECONNECTION ==============
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+            
+            try {
+                const wsUrl = window.APP_CONFIG?.WS_URL || 'ws://localhost:8081';
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    wsReconnectAttempts = 0;
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'gameStateUpdate') {
+                            // Refresh game state when we get an update
+                            fetchGameState();
+                        } else if (data.type === 'reaction') {
+                            // Show reaction from another player
+                            if (data.playerId != currentPlayerId) {
+                                showReaction(data.emoji, data.playerName);
+                            }
+                        }
+                    } catch (e) {
+                        console.log('WebSocket message parse error:', e);
+                    }
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    attemptReconnect();
+                };
+                
+                ws.onerror = (error) => {
+                    console.log('WebSocket error, falling back to polling');
+                };
+            } catch (e) {
+                console.log('WebSocket not available, using polling');
+            }
+        }
+        
+        function attemptReconnect() {
+            if (wsReconnectAttempts >= MAX_WS_RECONNECT) {
+                console.log('Max WebSocket reconnection attempts reached, using polling only');
+                return;
+            }
+            
+            wsReconnectAttempts++;
+            const delay = WS_RECONNECT_BASE_DELAY * Math.pow(2, wsReconnectAttempts - 1);
+            console.log(`WebSocket reconnecting in ${delay}ms (attempt ${wsReconnectAttempts}/${MAX_WS_RECONNECT})`);
+            
+            setTimeout(() => {
+                if (gameId) { // Only reconnect if still in a game
+                    connectWebSocket();
+                }
+            }, delay);
+        }
+
+        // Function to handle header click
+        function handleHeaderClick() {
+            if (gameId) {
+                // In a game - show modal
+                document.getElementById('leave-modal').style.display = 'flex';
+            }
+            // If not in a game, header click does nothing (already at lobby)
+        }
+        
+        // Function to close the modal
+        function closeModal() {
+            document.getElementById('leave-modal').style.display = 'none';
+        }
+
+        // Function to fetch the current bidding state
+        function fetchBiddingState() {
+            fetch(`${API_URL}?endpoint=getGameState&gameId=${gameId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                        return;
+                    }
+
+                    const biddingArea = document.getElementById('bidding-area');
+                    biddingArea.innerHTML = ''; // Clear the bidding area
+
+                    // Display the current bid and current bidder
+                    const currentBid = document.createElement('p');
+                    currentBid.innerText = `Current Bid: ${data.currentBid}`;
+                    biddingArea.appendChild(currentBid);
+
+                    const currentBidder = document.createElement('p');
+                    currentBidder.innerText = `Current Bidder: Player ${data.currentBidder}`;
+                    biddingArea.appendChild(currentBidder);
+
+                    // Display valid bid options
+                    const validBids = data.validBids;
+                    validBids.forEach(bid => {
+                        const bidButton = document.createElement('button');
+                        bidButton.innerText = `Bid ${bid}`;
+                        bidButton.disabled = data.currentBidder !== currentPlayerId; // Disable if not the current player's turn
+                        bidButton.addEventListener('click', () => processBid(bid));
+                        biddingArea.appendChild(bidButton);
+                    });
+
+                    // Add a "Pass" button
+                    const passButton = document.createElement('button');
+                    passButton.innerText = 'Pass';
+                    passButton.disabled = data.currentBidder !== currentPlayerId; // Disable if not the current player's turn
+                    passButton.addEventListener('click', () => processBid(0)); // Pass is represented by a bid of 0
+                    biddingArea.appendChild(passButton);
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        }
+
+        // Function to process a bid
+        function processBid(bidAmount) {
+            playSound('bid');
+            fetch(`${API_URL}?endpoint=processBid`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameId=${gameId}&playerId=${currentPlayerId}&bidAmount=${bidAmount}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                    } else {
+                        document.getElementById('game-message').innerText = 'Bid processed successfully!';
+                        fetchBiddingState(); // Refresh the bidding state
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        }
+
+        // Function to fetch the game state and toggle views
+        function fetchGameState() {
+            fetch(`${API_URL}?endpoint=getGameState&gameId=${gameId}&playerId=${currentPlayerId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        // No game state yet - still in lobby
+                        return;
+                    }
+
+                    // Hide lobby when game starts
+                    document.getElementById('lobby-area').style.display = 'none';
+                    stopLobbyPolling(); // Stop lobby refresh when game starts
+
+                    // Toggle views based on the game phase
+                    const phase = data.phase || 'bidding';
+                    
+                    // Check for game over first
+                    if (data.gameWinner || phase === 'game_over') {
+                        stopPolling();
+                        showGameOver(data);
+                    } else if (phase === 'round_summary') {
+                        // Show round summary - prioritize this over trick display
+                        showRoundSummary(data);
+                    } else if (phase === 'bidding') {
+                        showBiddingPhase();
+                        updateBiddingArea(data);
+                    } else if (phase === 'kitty') {
+                        showKittyPhase();
+                        // Only update kitty UI if we haven't started selecting yet
+                        // This prevents the UI from resetting during card selection
+                        const isHighestBidder = data.highestBidder == currentPlayerId;
+                        if (!isHighestBidder || selectedCards.length === 0) {
+                            updateKittySelection(data);
+                        }
+                    } else if (phase === 'trick') {
+                        showTrickGameplayPhase();
+                        updateTrickGameplay(data);
+                    }
+                    
+                    // Update scoreboard
+                    updateScoreboard(data);
+                    
+                    // Check for new reactions
+                    checkForReactions(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching game state:', error);
+                });
+        }
+        
+        // Function to update the persistent scoreboard
+        function updateScoreboard(data) {
+            const scoreboard = document.getElementById('scoreboard');
+            const content = document.getElementById('scoreboard-content');
+            
+            // Only show scoreboard if we have scores
+            const scores = data.finalScores || {};
+            const playerNames = data.playerNames || {};
+            
+            if (Object.keys(scores).length === 0 && Object.keys(playerNames).length === 0) {
+                scoreboard.style.display = 'none';
+                return;
+            }
+            
+            scoreboard.style.display = 'block';
+            
+            // Build scoreboard as a table - players already in join order from backend
+            const players = Object.keys(playerNames).length > 0 ? Object.keys(playerNames) : Object.keys(scores);
+            
+            // Get the current dealer and next dealer
+            const dealerIndex = data.dealer ?? 0;
+            const currentDealerId = players[dealerIndex];
+            const nextDealerIndex = (dealerIndex + 1) % players.length;
+            const nextDealerId = players[nextDealerIndex];
+            
+            let html = `
+                <table class="scoreboard-table">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            players.forEach(pid => {
+                const name = playerNames[pid] || `Player ${pid}`;
+                const score = scores[pid] || 0;
+                const isMe = pid == currentPlayerId;
+                const isCurrentDealer = pid == currentDealerId;
+                const isNextDealer = pid == nextDealerId;
+                
+                let dealerTag = '';
+                if (isCurrentDealer) {
+                    dealerTag = ' <span style="color: #888; font-size: 0.85em;">(current dealer)</span>';
+                } else if (isNextDealer) {
+                    dealerTag = ' <span style="color: #888; font-size: 0.85em;">(next deal)</span>';
+                }
+                
+                html += `
+                    <tr class="${isMe ? 'is-me' : ''}">
+                        <td>${isMe ? '⭐ ' : ''}${name}${dealerTag}</td>
+                        <td class="score-cell">${score}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            content.innerHTML = html;
+        }
+
+        // Function to show the bidding phase
+        function showBiddingPhase() {
+            document.getElementById('game-container').style.display = 'none'; // Hide form/lobby
+            document.getElementById('bidding-area').style.display = 'block';
+            document.getElementById('gameplay-container').style.display = 'none';
+            document.getElementById('game-footer').style.display = 'none'; // Hide footer during game
+            document.getElementById('game-message').innerText = ''; // Clear old messages
+            showGameControls();
+        }
+
+        // Function to show the kitty selection phase
+        function showKittyPhase() {
+            document.getElementById('game-container').style.display = 'none'; // Hide form/lobby
+            showGameControls();
+            document.getElementById('bidding-area').style.display = 'none';
+            document.getElementById('game-footer').style.display = 'none'; // Hide footer during game
+            document.getElementById('gameplay-container').style.display = 'block';
+            document.getElementById('player-hands').style.display = 'block'; // Show player hands / kitty
+            document.getElementById('trump-selection').style.display = 'block'; // Show trump selection
+            document.getElementById('confirm-selection').style.display = 'block'; // Show confirm button
+            document.getElementById('trick-area').style.display = 'none'; // Hide trick area during kitty
+            document.getElementById('game-message').innerText = ''; // Clear old messages
+        }
+
+        // Function to show the trick gameplay phase
+        function showTrickGameplayPhase() {
+            document.getElementById('game-container').style.display = 'none'; // Hide form/lobby
+            document.getElementById('bidding-area').style.display = 'none';
+            document.getElementById('gameplay-container').style.display = 'block';
+            document.getElementById('game-footer').style.display = 'none'; // Hide footer during game
+            // Make sure all gameplay elements are visible
+            document.getElementById('trick-area').style.display = 'block';
+            document.getElementById('trump-selection').style.display = 'block';
+            document.getElementById('confirm-selection').style.display = 'block';
+            showGameControls(); // Show emoji panel
+            document.getElementById('game-message').innerText = ''; // Clear old messages
+        }
+        
+        // Function to display game over screen with final scores
+        function showGameOver(data) {
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('bidding-area').style.display = 'none';
+            document.getElementById('gameplay-container').style.display = 'block';
+            document.getElementById('game-footer').style.display = 'block'; // Show footer
+            document.getElementById('trump-selection').style.display = 'none';
+            document.getElementById('trick-area').style.display = 'none';
+            document.getElementById('confirm-selection').style.display = 'none';
+            document.getElementById('player-hands').style.display = 'block';
+            hideGameControls();
+            
+            const winnerName = data.playerNames ? data.playerNames[data.gameWinner] : `Player ${data.gameWinner}`;
+            
+            // Celebrate if current player won!
+            if (data.gameWinner == currentPlayerId) {
+                celebrate();
+            } else {
+                playSound('lose');
+            }
+            const playerNames = data.playerNames || {};
+            const finalScores = data.finalScores || {};
+            
+            // Sort players by score (highest first)
+            const sortedPlayers = Object.keys(finalScores).sort((a, b) => finalScores[b] - finalScores[a]);
+            
+            let scoresHtml = sortedPlayers.map((playerId, index) => {
+                const name = playerNames[playerId] || `Player ${playerId}`;
+                const score = finalScores[playerId];
+                const isWinner = playerId == data.gameWinner;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                return `
+                    <tr style="${isWinner ? 'background: rgba(212, 175, 55, 0.2);' : ''}">
+                        <td style="padding: 8px; text-align: left;">${medal} ${name}</td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold; ${isWinner ? 'color: #d4af37;' : ''}">${score}</td>
+                    </tr>`;
+            }).join('');
+            
+            document.getElementById('player-hands').innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: #d4af37; margin-bottom: 5px;">🏆 Game Over</h2>
+                    <h3 style="color: #fff; margin-bottom: 20px;">${winnerName} wins!</h3>
+                    
+                    <h4 style="color: #ccc; margin-bottom: 10px;">Final Scores</h4>
+                    <table style="width: 100%; max-width: 300px; margin: 0 auto; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #d4af37;">
+                                <th style="padding: 8px; text-align: left;">Player</th>
+                                <th style="padding: 8px; text-align: center;">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${scoresHtml}
+                        </tbody>
+                    </table>
+                    
+                    <button id="return-to-lobby-btn" style="margin-top: 20px; padding: 10px 25px; font-size: 1em; cursor: pointer; background: #d4af37; color: #1a1a1a; border: none; border-radius: 5px;">
+                        Return to Lobby
+                    </button>
+                </div>`;
+            
+            document.getElementById('game-message').innerHTML = '';
+            
+            // Add click handler for return to lobby button
+            document.getElementById('return-to-lobby-btn').addEventListener('click', returnToLobby);
+        }
+        
+        // Function to return to lobby and clear game state
+        function returnToLobby() {
+            clearSession();
+            gameId = null;
+            currentPlayerId = null;
+            stopPolling();
+            hideGameControls();
+            
+            // Reset UI to initial state
+            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('game-form').style.display = 'flex';
+            document.getElementById('gameplay-container').style.display = 'none';
+            document.getElementById('bidding-area').style.display = 'none';
+            document.getElementById('lobby-area').style.display = 'none';
+            document.getElementById('player-hands').innerHTML = '';
+            document.getElementById('trick-area').innerHTML = '';
+            document.getElementById('trump-selection').innerHTML = '';
+            document.getElementById('confirm-selection').innerHTML = '';
+            document.getElementById('game-message').innerHTML = '';
+            document.getElementById('game-footer').style.display = 'block';
+            document.getElementById('scoreboard').style.display = 'none';
+            
+            // Clear form fields
+            document.getElementById('player-name').value = '';
+            document.getElementById('game-code').value = '';
+        }
+        
+        // Function to display round summary
+        function showRoundSummary(data) {
+            document.getElementById('game-container').style.display = 'none'; // Hide form/lobby
+            document.getElementById('bidding-area').style.display = 'none';
+            document.getElementById('gameplay-container').style.display = 'block';
+            document.getElementById('game-footer').style.display = 'none'; // Hide footer during game
+            document.getElementById('trump-selection').style.display = 'none'; // Hide trump during summary
+            document.getElementById('trick-area').style.display = 'none'; // Hide trick area during summary
+            document.getElementById('confirm-selection').style.display = 'none'; // Hide confirm button
+            document.getElementById('player-hands').style.display = 'block'; // Show player-hands for summary
+            showGameControls(); // Show emoji panel
+            
+            const summary = data.roundSummary;
+            if (!summary) {
+                console.error('Round summary data missing!', data);
+                document.getElementById('player-hands').innerHTML = '<p style="color: #ccc; text-align: center;">Loading round summary...</p>';
+                return;
+            }
+            
+            const playerNames = data.playerNames || {};
+            const bidWinnerName = playerNames[summary.bidWinner] || `Player ${summary.bidWinner}`;
+            
+            // Get highest card info
+            const highestCardPlayerName = summary.highestCardPlayer ? 
+                (playerNames[summary.highestCardPlayer] || `Player ${summary.highestCardPlayer}`) : null;
+            
+            // Build the summary HTML
+            let summaryHtml = `
+                <div style="text-align: center; padding: 10px;">
+                    <h2 style="font-size: 1.2em; margin-bottom: 8px;">📊 Round ${data.roundNumber || 1} Complete</h2>
+                    <p style="color: #888; margin-bottom: 8px; font-size: 0.9em;">
+                        ${bidWinnerName} bid ${summary.bid} and ${summary.bidMade ? '✅ made it!' : '❌ failed!'}
+                    </p>
+                    ${!summary.bidMade ? `
+                        <p style="color: #ef4444; font-size: 0.9em; margin-bottom: 10px; font-style: italic;">
+                            🕳️ ${bidWinnerName} is going down the hole!
+                        </p>
+                    ` : ''}
+                    ${summary.highestCard ? `
+                        <p style="color: ${summary.bidWinnerForfeitsBonus ? '#888' : '#d4af37'}; margin-bottom: 10px; font-size: 0.85em;">
+                            🃏 Top trump: <strong>${formatCardText(summary.highestCard)}</strong> by ${highestCardPlayerName}
+                            ${summary.bidWinnerForfeitsBonus ? '<span style="color: #ef4444;">(forfeited - bid winner ≥85)</span>' : '(+5)'}
+                        </p>
+                    ` : ''}
+                    
+                    <table style="width: 100%; max-width: 400px; margin: 0 auto; border-collapse: collapse; font-size: 0.9em;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #d4af37;">
+                                <th style="padding: 6px; text-align: left;">Player</th>
+                                <th style="padding: 6px; text-align: center;">Tricks</th>
+                                <th style="padding: 6px; text-align: center;">Bonus</th>
+                                <th style="padding: 6px; text-align: center;">Pts</th>
+                                <th style="padding: 6px; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            // Add row for each player
+            for (const [pid, tricks] of Object.entries(summary.tricksWon || {})) {
+                const name = playerNames[pid] || `Player ${pid}`;
+                const roundPoints = summary.roundPoints[pid] || 0;
+                const totalScore = summary.totalScores[pid] || 0;
+                const isBidWinner = pid == summary.bidWinner;
+                const playedHighest = pid == summary.highestCardPlayer;
+                const forfeited = isBidWinner && summary.bidWinnerForfeitsBonus;
+                const hasBonus = playedHighest && !forfeited;
+                const pointsColor = roundPoints >= 0 ? '#22c55e' : '#ef4444';
+                
+                summaryHtml += `
+                    <tr style="border-bottom: 1px solid #444;">
+                        <td style="padding: 6px; text-align: left; font-size: 0.85em;">
+                            ${isBidWinner ? '🎯' : ''}${name}
+                        </td>
+                        <td style="padding: 6px; text-align: center;">${tricks}</td>
+                        <td style="padding: 6px; text-align: center; color: ${forfeited ? '#ef4444' : '#d4af37'};">
+                            ${playedHighest ? (forfeited ? '✗' : '+5') : '-'}
+                        </td>
+                        <td style="padding: 6px; text-align: center; color: ${pointsColor};">
+                            ${roundPoints >= 0 ? '+' : ''}${roundPoints}
+                        </td>
+                        <td style="padding: 6px; text-align: right; font-weight: bold;">${totalScore}</td>
+                    </tr>`;
+            }
+            
+            summaryHtml += `
+                        </tbody>
+                    </table>
+                    
+                    <button id="continue-round-btn" style="margin-top: 15px; padding: 10px 25px; font-size: 1em; background: #d4af37; color: #1a1a1a; border: none; border-radius: 6px; cursor: pointer;">
+                        Continue →
+                    </button>
+                </div>`;
+            
+            document.getElementById('player-hands').innerHTML = summaryHtml;
+            document.getElementById('trick-area').innerHTML = '';
+            document.getElementById('trump-selection').innerHTML = '';
+            document.getElementById('confirm-selection').innerHTML = '';
+            document.getElementById('game-message').innerHTML = '';
+            
+            // Add click handler for continue button
+            document.getElementById('continue-round-btn').addEventListener('click', continueToNextRound);
+        }
+        
+        // Function to continue to next round
+        function continueToNextRound() {
+            // Reset swap state for next round
+            swapSelectedCards = [];
+            hasCompletedSwap = false;
+            
+            fetch(`${API_URL}?endpoint=continueRound`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameId=${gameId}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                    } else {
+                        fetchGameState(); // Refresh to show new round
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        }
+
+        // Function to update the bidding area
+        function updateBiddingArea(data) {
+            const biddingArea = document.getElementById('bidding-area');
+            biddingArea.innerHTML = '<h3>Bidding Phase</h3>';
+
+            // Display the current bid
+            const currentBid = document.createElement('p');
+            currentBid.innerText = `Current Bid: ${data.currentBid || 0}`;
+            biddingArea.appendChild(currentBid);
+
+            // Show if it's your turn
+            const isMyTurn = data.currentBidder == currentPlayerId;
+            const turnInfo = document.createElement('p');
+            const bidderName = data.playerNames ? data.playerNames[data.currentBidder] : `Player ${data.currentBidder}`;
+            turnInfo.innerText = isMyTurn ? "Your turn to bid" : `Waiting for ${bidderName} to bid`;
+            turnInfo.style.fontWeight = isMyTurn ? 'bold' : 'normal';
+            biddingArea.appendChild(turnInfo);
+
+            // Display valid bid options (only if it's your turn)
+            if (isMyTurn) {
+                const validBids = data.validBids || [15, 20, 25, 30];
+                const bidsContainer = document.createElement('div');
+                bidsContainer.className = 'bid-buttons';
+                
+                // If dealer can match, show a special "Match" button first
+                if (data.dealerCanMatch && data.currentBid > 0) {
+                    const matchButton = document.createElement('button');
+                    matchButton.innerText = `Match ${data.currentBid}`;
+                    matchButton.className = 'match-btn';
+                    matchButton.title = 'As dealer, you can match the current bid to win it';
+                    matchButton.addEventListener('click', () => processBid(data.currentBid));
+                    bidsContainer.appendChild(matchButton);
+                }
+                
+            validBids.forEach(bid => {
+                    if (bid > (data.currentBid || 0)) {
+                const bidButton = document.createElement('button');
+                bidButton.innerText = `Bid ${bid}`;
+                bidButton.addEventListener('click', () => processBid(bid));
+                        bidsContainer.appendChild(bidButton);
+                    }
+            });
+
+            // Add a "Pass" button (disabled if dealer must bid)
+            const passButton = document.createElement('button');
+            passButton.className = 'pass-btn';
+            if (data.dealerMustBid) {
+                passButton.innerText = 'Must Bid';
+                passButton.disabled = true;
+                passButton.title = 'Everyone passed - dealer must bid at least 15';
+            } else {
+                passButton.innerText = 'Pass';
+                passButton.addEventListener('click', () => processBid(0));
+            }
+            bidsContainer.appendChild(passButton);
+                
+                biddingArea.appendChild(bidsContainer);
+            }
+
+            // Show player's hand during bidding
+            if (data.players && data.players[currentPlayerId]) {
+                const handDiv = document.createElement('div');
+                handDiv.innerHTML = '<h4>Your Hand:</h4>';
+                const cardsDiv = document.createElement('div');
+                cardsDiv.className = 'cards-container';
+                const biddingCards = sortCards ? sortCardsByRank(data.players[currentPlayerId], null) : data.players[currentPlayerId];
+                biddingCards.forEach(card => {
+                    const cardEl = document.createElement('span');
+                    cardEl.className = 'card';
+                    cardEl.innerHTML = formatCard(card);
+                    cardsDiv.appendChild(cardEl);
+                });
+                handDiv.appendChild(cardsDiv);
+                biddingArea.appendChild(handDiv);
+            }
+        }
+
+        // Track cards selected for swapping
+        let swapSelectedCards = [];
+        let hasCompletedSwap = false;
+
+        // Function to update kitty selection UI
+        function updateKittySelection(data) {
+            const isHighestBidder = data.highestBidder == currentPlayerId;
+            const bidderName = data.playerNames ? data.playerNames[data.highestBidder] : `Player ${data.highestBidder}`;
+            const playerNames = data.playerNames || {};
+            const swapComplete = data.swapComplete || [];
+            
+            if (isHighestBidder) {
+                // Check if bid winner has already submitted
+                if (data.bidWinnerReady) {
+                    // Show waiting for other players to swap
+                    const allPlayerIds = Object.keys(playerNames);
+                    const stillSwapping = allPlayerIds.filter(pid => 
+                        pid != data.highestBidder && 
+                        !swapComplete.includes(parseInt(pid)) && 
+                        !swapComplete.includes(pid)
+                    );
+                    
+                    const waitingFor = stillSwapping.map(pid => playerNames[pid] || `Player ${pid}`).join(', ');
+                    
+                    // Build swap status for completed players
+                    const swapCounts = data.swapCounts || {};
+                    const swapStatusHtml = buildSwapStatusHtml(playerNames, swapComplete, swapCounts, data.highestBidder);
+                    
+                    const container = document.getElementById('player-hands');
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <h3>✅ Kitty Selection Complete</h3>
+                            <p style="color: #ffd700; margin-top: 15px;">Trump: ${formatTrumpSuit(data.trumpSuit)}</p>
+                            <p style="color: #ccc; margin-top: 10px;">Other players are now swapping cards...</p>
+                            ${swapStatusHtml}
+                            ${stillSwapping.length > 0 ? `<p style="color: #888; font-size: 14px; margin-top: 10px;">Still swapping: ${waitingFor}</p>` : ''}
+                            <p style="color: #888; font-size: 14px; margin-top: 20px;">The game will continue automatically</p>
+                        </div>
+                    `;
+                    document.getElementById('trick-area').style.display = 'none';
+                    document.getElementById('trump-selection').style.display = 'none';
+                    document.getElementById('confirm-selection').style.display = 'none';
+                } else {
+                // Show kitty selection UI
+                const kittyCards = data.kitty || [];
+                const playerHand = data.players ? data.players[currentPlayerId] : [];
+                displayKittyAndTrumpSelection(kittyCards, playerHand);
+                document.getElementById('game-message').innerText = '📢 You won the bid. Select 5 cards to keep and choose trump';
+                }
+            } else {
+                // Non-bid-winner flow
+                const bidWinnerReady = data.bidWinnerReady || false;
+                const alreadySwapped = swapComplete.includes(currentPlayerId) || swapComplete.includes(String(currentPlayerId));
+                
+                if (!bidWinnerReady) {
+                    // Step 1: Wait for bid winner to select trump first
+                const container = document.getElementById('player-hands');
+                    const playerHand = data.players ? data.players[currentPlayerId] : [];
+                    
+                    // Show their hand (read-only) while waiting
+                    let handHtml = '<div class="cards-container" style="opacity: 0.7;">';
+                    const displayHand = sortCards ? sortCardsByRank(playerHand, null) : playerHand;
+                    displayHand.forEach(card => {
+                        handHtml += `<div class="card">${formatCard(card)}</div>`;
+                    });
+                    handHtml += '</div>';
+                    
+                container.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                        <h3>⏳ Waiting for ${bidderName}</h3>
+                        <p style="color: #ccc; margin-top: 10px;">${bidderName} is selecting cards from the kitty and choosing trump</p>
+                            <p style="color: #ffd700; font-size: 14px; margin-top: 15px;">Once trump is selected, you'll be able to swap cards</p>
+                        </div>
+                        <h4 style="margin-top: 20px;">Your Current Hand:</h4>
+                        ${handHtml}
+                    `;
+                    document.getElementById('trick-area').style.display = 'none';
+                    document.getElementById('trump-selection').style.display = 'none';
+                    document.getElementById('confirm-selection').style.display = 'none';
+                    
+                } else if (alreadySwapped || hasCompletedSwap) {
+                    // Step 3: Swap complete - show waiting for others
+                    hasCompletedSwap = true;
+                    
+                    const allPlayerIds = Object.keys(playerNames);
+                    const stillSwapping = allPlayerIds.filter(pid => 
+                        pid != data.highestBidder && 
+                        !swapComplete.includes(parseInt(pid)) && 
+                        !swapComplete.includes(pid)
+                    );
+                    
+                    // Build swap status for completed players
+                    const swapCounts = data.swapCounts || {};
+                    const swapStatusHtml = buildSwapStatusHtml(playerNames, swapComplete, swapCounts, data.highestBidder);
+                    
+                    let statusHtml = `<p style="color: #4ade80; margin-top: 10px;">Trump: ${formatTrumpSuit(data.trumpSuit)}</p>`;
+                    if (stillSwapping.length > 0) {
+                        const waitingFor = stillSwapping.map(pid => playerNames[pid] || `Player ${pid}`).join(', ');
+                        statusHtml += `<p style="color: #888; font-size: 14px; margin-top: 10px;">Waiting for: ${waitingFor} to finish swapping</p>`;
+                    }
+                    
+                    const container = document.getElementById('player-hands');
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <h3>✅ Card Swap Complete</h3>
+                            ${statusHtml}
+                            ${swapStatusHtml}
+                        <p style="color: #888; font-size: 14px; margin-top: 20px;">The game will continue automatically</p>
+                    </div>
+                `;
+                document.getElementById('trick-area').style.display = 'none';
+                document.getElementById('trump-selection').style.display = 'none';
+                document.getElementById('confirm-selection').style.display = 'none';
+                    
+                } else {
+                    // Step 2: Trump selected - NOW show swap UI
+                    const maxSwap = data.maxSwapCards || 3;
+                    const playerHand = data.players ? data.players[currentPlayerId] : [];
+                    displaySwapUI(playerHand, maxSwap, bidderName, data.trumpSuit);
+                }
+            }
+        }
+        
+        // Function to display the card swap UI for non-bid-winners
+        function displaySwapUI(playerHand, maxSwap, bidderName, trumpSuit) {
+            const container = document.getElementById('player-hands');
+            
+            // Reset swap selection if hand changed
+            swapSelectedCards = swapSelectedCards.filter(card => playerHand.includes(card));
+            
+            let html = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h3>🔄 Card Swap</h3>
+                    <p style="color: #ffd700; font-size: 18px; margin: 10px 0;">Trump: ${formatTrumpSuit(trumpSuit)}</p>
+                    <p style="color: #ccc;">Select up to ${maxSwap} cards to swap for new ones from the deck</p>
+                </div>
+                <h4>Your Hand (tap cards to swap)</h4>
+                <div class="cards-container">
+            `;
+            
+            const displayHand = sortCards ? sortCardsByRank(playerHand, trumpSuit) : playerHand;
+            displayHand.forEach(card => {
+                const isSelected = swapSelectedCards.includes(card);
+                html += `
+                    <div class="card selectable ${isSelected ? 'selected' : ''}" 
+                         data-card="${card}" 
+                         onclick="toggleSwapCard('${card}', this, ${maxSwap})">
+                        ${formatCard(card)}
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="margin-bottom: 15px; color: ${swapSelectedCards.length > 0 ? '#ffd700' : '#888'};">
+                        ${swapSelectedCards.length > 0 
+                            ? `Selected ${swapSelectedCards.length} card${swapSelectedCards.length > 1 ? 's' : ''} to swap` 
+                            : 'No cards selected (you can keep your current hand)'}
+                    </p>
+                    <button onclick="submitSwap()" class="btn-primary" style="padding: 12px 30px; font-size: 16px;">
+                        ${swapSelectedCards.length > 0 ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` : 'Keep Current Hand'}
+                    </button>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            
+            // Hide other sections
+            document.getElementById('trick-area').style.display = 'none';
+            document.getElementById('trump-selection').style.display = 'none';
+            document.getElementById('confirm-selection').style.display = 'none';
+        }
+        
+        // Function to toggle card selection for swapping
+        function toggleSwapCard(card, element, maxSwap) {
+            const index = swapSelectedCards.indexOf(card);
+            
+            if (index > -1) {
+                // Deselect
+                swapSelectedCards.splice(index, 1);
+                element.classList.remove('selected');
+            } else if (swapSelectedCards.length < maxSwap) {
+                // Select
+                swapSelectedCards.push(card);
+                element.classList.add('selected');
+            } else {
+                // At max - show message
+                document.getElementById('game-message').innerText = `⚠️ You can only swap up to ${maxSwap} cards`;
+                setTimeout(() => {
+                    document.getElementById('game-message').innerText = '';
+                }, 2000);
+                return;
+            }
+            
+            // Update button text
+            const btn = document.querySelector('#player-hands button');
+            if (btn) {
+                btn.innerText = swapSelectedCards.length > 0 
+                    ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` 
+                    : 'Keep Current Hand';
+            }
+            
+            // Update status text
+            const statusP = document.querySelector('#player-hands > div:last-child > p');
+            if (statusP) {
+                statusP.style.color = swapSelectedCards.length > 0 ? '#ffd700' : '#888';
+                statusP.innerText = swapSelectedCards.length > 0 
+                    ? `Selected ${swapSelectedCards.length} card${swapSelectedCards.length > 1 ? 's' : ''} to swap` 
+                    : 'No cards selected (you can keep your current hand)';
+            }
+        }
+        
+        // Function to submit the card swap
+        function submitSwap() {
+            const btn = document.querySelector('#player-hands button');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Swapping...';
+            }
+            
+            fetch(`${API_URL}?endpoint=swapCards`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `gameId=${gameId}&playerId=${currentPlayerId}&cardsToDiscard=${encodeURIComponent(JSON.stringify(swapSelectedCards))}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Swap failed: ' + data.error);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = swapSelectedCards.length > 0 
+                            ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` 
+                            : 'Keep Current Hand';
+                    }
+                } else {
+                    hasCompletedSwap = true;
+                    swapSelectedCards = [];
+                    if (data.cardsSwapped > 0) {
+                        document.getElementById('game-message').innerText = `✅ Swapped ${data.cardsSwapped} card${data.cardsSwapped > 1 ? 's' : ''}!`;
+                    } else {
+                        document.getElementById('game-message').innerText = '✅ Keeping current hand';
+                    }
+                    // Refresh game state to show waiting message
+                    fetchGameState();
+                }
+            })
+            .catch(err => {
+                console.error('Swap error:', err);
+                alert('Error swapping cards');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = swapSelectedCards.length > 0 
+                        ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` 
+                        : 'Keep Current Hand';
+                }
+            });
+        }
+
+        // Helper function to get card image URL
+        // Uses deckofcardsapi.com free card images
+        function getCardImageUrl(card) {
+            if (card === 'Joker') {
+                return 'https://deckofcardsapi.com/static/img/X1.png';
+            }
+            // Our format: "HA" (Hearts Ace), "S10" (Spades 10)
+            // API format: "AH" (Ace Hearts), "0H" (10 Hearts)
+            const suit = card[0]; // H, D, C, S
+            let rank = card.substring(1); // A, 2-10, J, Q, K
+            
+            // API uses "0" for 10
+            if (rank === '10') rank = '0';
+            
+            // API format is {rank}{suit}
+            return `https://deckofcardsapi.com/static/img/${rank}${suit}.png`;
+        }
+        
+        // Helper function to format card display (returns HTML with image)
+        function formatCard(card, size = 'normal') {
+            const imgUrl = getCardImageUrl(card);
+            const sizeClass = size === 'small' ? 'card-img-small' : 'card-img';
+            return `<img src="${imgUrl}" alt="${card}" class="${sizeClass}" />`;
+        }
+        
+        // Helper function to format card as text (for places where images don't fit)
+        function formatCardText(card) {
+            if (card === 'Joker') return '<span style="color: #9333ea;">🃏 Joker</span>';
+            const suitSymbols = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' };
+            const suit = card[0];
+            const rank = card.substring(1);
+            const symbol = suitSymbols[suit] || suit;
+            const color = (suit === 'H' || suit === 'D') ? '#dc2626' : '#1a1a1a';
+            return `<span style="color: ${color};">${rank}${symbol}</span>`;
+        }
+        
+        // Helper function to format trump suit display
+        function formatTrumpSuit(suit) {
+            // Use bright red for hearts/diamonds, light gray for clubs/spades (readable on dark bg)
+            const suitInfo = {
+                'H': { symbol: '♥', name: 'Hearts', color: '#ef4444' },
+                'D': { symbol: '♦', name: 'Diamonds', color: '#ef4444' },
+                'C': { symbol: '♣', name: 'Clubs', color: '#e5e5e5' },
+                'S': { symbol: '♠', name: 'Spades', color: '#e5e5e5' }
+            };
+            const info = suitInfo[suit] || { symbol: suit, name: suit, color: '#888' };
+            return `<span style="color: ${info.color}; font-size: 1.2em; font-weight: bold;">${info.symbol}</span> ${info.name}`;
+        }
+        
+        // Helper function to build swap status HTML showing how many cards each player swapped
+        function buildSwapStatusHtml(playerNames, swapComplete, swapCounts, bidWinnerId) {
+            const completedPlayers = Object.keys(playerNames).filter(pid => 
+                pid != bidWinnerId && 
+                (swapComplete.includes(parseInt(pid)) || swapComplete.includes(pid))
+            );
+            
+            if (completedPlayers.length === 0) {
+                return '<p style="color: #ccc; margin-top: 15px;">Waiting for other players to swap cards...</p>';
+            }
+            
+            let html = '<div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">';
+            html += '<p style="color: #ccc; margin-bottom: 10px; font-size: 14px;">Card swaps:</p>';
+            
+            completedPlayers.forEach(pid => {
+                const name = playerNames[pid] || `Player ${pid}`;
+                const count = swapCounts[pid] ?? swapCounts[String(pid)] ?? 0;
+                const countText = count === 0 ? 'kept hand' : `swapped ${count}`;
+                const icon = count === 0 ? '✋' : '🔄';
+                html += `<p style="color: #4ade80; font-size: 13px; margin: 5px 0;">${icon} ${name}: ${countText}</p>`;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        // Helper function to check if highest card in trick is LOWER than Queen of trumps
+        // Returns true if taunt should be displayed
+        function isLowerThanQueenOfTrumps(trick, trumpSuit) {
+            if (!trick || trick.length === 0) return false;
+            
+            // High cards that DON'T trigger the taunt: 5/J/Q/K/A of trumps, Joker, Ace of Hearts
+            for (const { card } of trick) {
+                if (card === 'Joker') return false; // Joker is high
+                
+                const suit = card[0];
+                const rank = card.substring(1);
+                
+                // Check for Queen or higher trump cards - these don't trigger taunt
+                if (suit === trumpSuit) {
+                    if (rank === '5' || rank === 'J' || rank === 'Q' || rank === 'K' || rank === 'A') {
+                        return false; // High trump (Queen or above) - no taunt
+                    }
+                }
+                
+                // Ace of Hearts is always high
+                if (card === 'HA') return false;
+            }
+            
+            // All cards are lower than Queen of trumps - show taunt!
+            return true;
+        }
+
+        // Function to update the trick gameplay area
+        function updateTrickGameplay(data) {
+            // Display trump suit and bid info
+            const trumpDiv = document.getElementById('trump-selection');
+            const trumpSymbols = { 'H': '♥ Hearts', 'D': '♦ Diamonds', 'C': '♣ Clubs', 'S': '♠ Spades' };
+            // Use white/light colors for black suits on dark background
+            const trumpColor = (data.trumpSuit === 'H' || data.trumpSuit === 'D') ? '#ef4444' : '#e5e5e5';
+            
+            // Get bid winner info
+            const bidWinnerName = data.playerNames && data.highestBidder ? data.playerNames[data.highestBidder] : 'Unknown';
+            const bidAmount = data.winningBid || data.currentBid || '?';
+            
+            trumpDiv.innerHTML = `<h4>Trump: <span style="color: ${trumpColor}; font-weight: bold;">${trumpSymbols[data.trumpSuit] || data.trumpSuit}</span> · ${bidWinnerName} went ${bidAmount}</h4>`;
+            
+            // Display trick winners history
+            if (data.trickWinners && data.trickWinners.length > 0) {
+                const trickHistoryHtml = data.trickWinners.map(tw => {
+                    const winnerName = data.playerNames ? data.playerNames[tw.winner] : `Player ${tw.winner}`;
+                    const isMe = tw.winner == currentPlayerId;
+                    return `<span style="color: ${isMe ? '#d4af37' : '#ccc'};">${tw.trick}. ${isMe ? 'You' : winnerName}</span>`;
+                }).join(' · ');
+                trumpDiv.innerHTML += `<p style="font-size: 0.9em; margin-top: 5px;">Tricks: ${trickHistoryHtml}</p>`;
+            }
+            
+            const trickAreaDiv = document.getElementById('trick-area');
+            const gameMessageDiv = document.getElementById('game-message');
+            
+            // Check if a trick was just completed - show the result
+            if (data.trickComplete && data.lastCompletedTrick && data.lastCompletedTrick.length > 0) {
+                const winnerName = data.playerNames ? data.playerNames[data.lastTrickWinner] : `Player ${data.lastTrickWinner}`;
+                const isWinnerMe = data.lastTrickWinner == currentPlayerId;
+                
+                trickAreaDiv.innerHTML = `<h3 style="margin-bottom: 10px;">🏆 Trick complete</h3>`;
+                
+                const trickCardsDiv = document.createElement('div');
+                trickCardsDiv.className = 'trick-cards';
+                trickCardsDiv.style.display = 'flex';
+                trickCardsDiv.style.justifyContent = 'center';
+                trickCardsDiv.style.gap = '12px';
+                trickCardsDiv.style.flexWrap = 'wrap';
+                
+                data.lastCompletedTrick.forEach(({ playerId, card }) => {
+                    const cardWrapper = document.createElement('div');
+                    cardWrapper.style.textAlign = 'center';
+                    
+                    const isMe = playerId == currentPlayerId;
+                    const isWinner = playerId == data.lastTrickWinner;
+                    const playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : 'P' + playerId);
+                    
+                    // Player name above card
+                    const nameLabel = document.createElement('div');
+                    nameLabel.style.marginBottom = '5px';
+                    nameLabel.style.fontWeight = isWinner ? 'bold' : 'normal';
+                    nameLabel.style.color = isWinner ? '#d4af37' : '#ccc';
+                    nameLabel.style.fontSize = '1.1em';
+                    nameLabel.innerText = isWinner ? `👑 ${playerLabel}` : playerLabel;
+                    cardWrapper.appendChild(nameLabel);
+                    
+                    // The card
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'card played-card';
+                    cardElement.innerHTML = formatCard(card);
+                    
+                    if (isWinner) {
+                        cardElement.style.border = '3px solid gold';
+                        cardElement.style.boxShadow = '0 0 20px gold';
+                        cardElement.style.transform = 'scale(1.1)';
+                    }
+                    cardWrapper.appendChild(cardElement);
+                    
+                    trickCardsDiv.appendChild(cardWrapper);
+                });
+                trickAreaDiv.appendChild(trickCardsDiv);
+                
+                if (isWinnerMe) {
+                    gameMessageDiv.innerText = '📢 Tap a card to lead the next trick';
+                } else {
+                    gameMessageDiv.innerText = `📢 Waiting for ${winnerName} to play`;
+                }
+                
+                // Don't auto-advance - winner must play their next card
+                // But still show the winner's hand so they can play
+            } else {
+                // Only show "Current Trick" if we're not showing a completed trick
+                // Display the cards played in the current trick
+            trickAreaDiv.innerHTML = '<h3>Current Trick</h3>';
+                
+                const currentTrick = data.currentTrick || [];
+                if (currentTrick.length === 0) {
+                    trickAreaDiv.innerHTML += '<p style="color: #ccc; font-size: 1em; margin: 10px 0;">No cards played yet</p>';
+                } else {
+                    const trickCardsDiv = document.createElement('div');
+                    trickCardsDiv.className = 'trick-cards';
+                    currentTrick.forEach(({ playerId, card }) => {
+                        const cardWrapper = document.createElement('div');
+                        cardWrapper.style.textAlign = 'center';
+                        
+                        const isMe = playerId == currentPlayerId;
+                        const playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : 'P' + playerId);
+                        
+                        // Player name above card
+                        const nameLabel = document.createElement('div');
+                        nameLabel.style.marginBottom = '5px';
+                        nameLabel.style.color = '#ccc';
+                        nameLabel.style.fontSize = '0.9em';
+                        nameLabel.innerText = playerLabel;
+                        cardWrapper.appendChild(nameLabel);
+                        
+                        // The card
+                const cardElement = document.createElement('div');
+                        cardElement.className = 'card played-card';
+                        cardElement.innerHTML = formatCard(card);
+                        cardWrapper.appendChild(cardElement);
+                        
+                        trickCardsDiv.appendChild(cardWrapper);
+                    });
+                    trickAreaDiv.appendChild(trickCardsDiv);
+                }
+            }
+
+            // Only show turn message if not displaying trick complete
+            const isTrickComplete = data.trickComplete && data.lastCompletedTrick && data.lastCompletedTrick.length > 0;
+            const isMyTurn = data.currentTurn == currentPlayerId;
+            
+            if (!isTrickComplete) {
+            // Highlight the current player
+                const turnPlayerName = data.playerNames ? data.playerNames[data.currentTurn] : `Player ${data.currentTurn}`;
+                if (isMyTurn) {
+                    gameMessageDiv.innerText = "📢 Your turn - tap a card to play";
+            } else {
+                    gameMessageDiv.innerText = `📢 Waiting for ${turnPlayerName} to play`;
+                }
+                
+                // "Never send a boy to do a man's job" taunt
+                // Show when: first trick, bid winner about to play, highest card so far is lower than Queen of trumps
+                const currentTrick = data.currentTrick || [];
+                if ((data.tricksPlayed === 0 || data.tricksPlayed === undefined) && 
+                    currentTrick.length > 0 && 
+                    data.currentTurn == data.highestBidder &&
+                    isLowerThanQueenOfTrumps(currentTrick, data.trumpSuit)) {
+                    const tauntDiv = document.createElement('div');
+                    tauntDiv.className = 'taunt-message';
+                    tauntDiv.innerHTML = `<em style="color: #d4af37; font-size: 0.9em;">🎩 "Never send a boy to do a man's job"</em>`;
+                    trickAreaDiv.appendChild(tauntDiv);
+                }
+            }
+
+            // Display the player's hand
+            const playerHandsDiv = document.getElementById('player-hands');
+            const myCards = data.players ? data.players[currentPlayerId] : [];
+            
+            if (!myCards || myCards.length === 0) {
+                // Hide the hand div when no cards left
+                playerHandsDiv.style.display = 'none';
+                playerHandsDiv.innerHTML = '';
+            } else {
+                playerHandsDiv.style.display = 'block';
+                const sortBtnText = sortCards ? '✓ Sorted' : '🔀 Sort';
+                const sortBtnClass = sortCards ? 'sort-btn sort-btn-active' : 'sort-btn';
+                playerHandsDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">Your Hand</h3>
+                        <button onclick="toggleSortCards()" class="${sortBtnClass}">${sortBtnText}</button>
+                    </div>`;
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'cards-container';
+                
+                const displayCards = sortCards ? sortCardsByRank(myCards, data.trumpSuit) : myCards;
+                displayCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                    cardElement.className = 'card hand-card';
+                    cardElement.innerHTML = formatCard(card);
+                    
+                    const suit = card[0];
+                    if (suit === data.trumpSuit) {
+                        cardElement.classList.add('trump-card');
+                    }
+
+                // Add event listener to play the card if it's the player's turn
+                    if (isMyTurn) {
+                        cardElement.classList.add('playable');
+                    cardElement.addEventListener('click', () => playCard(card));
+                } else {
+                        cardElement.classList.add('disabled');
+                }
+
+                    cardsContainer.appendChild(cardElement);
+            });
+                playerHandsDiv.appendChild(cardsContainer);
+            }
+            
+            // Hide confirm button during trick play
+            document.getElementById('confirm-selection').innerHTML = '';
+        }
+
+        // Function to display the Kitty cards and allow trump selection
+        function displayKittyAndTrumpSelection(kittyCards, playerHand) {
+            selectedCards = []; // Reset selection
+            
+            // Hide trick area during kitty selection
+            document.getElementById('trick-area').style.display = 'none';
+            
+            const playerHandsDiv = document.getElementById('player-hands');
+            playerHandsDiv.innerHTML = '<h3>Your Hand (tap to select)</h3>';
+            
+            const handContainer = document.createElement('div');
+            handContainer.className = 'cards-container';
+
+            // Display player's hand (sorted if enabled, no trump yet during kitty selection)
+            const displayHand = sortCards ? sortCardsByRank(playerHand, null) : playerHand;
+            displayHand.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card selectable';
+                cardElement.innerHTML = formatCard(card);
+                cardElement.dataset.card = card;
+                cardElement.addEventListener('click', () => toggleCardSelection(card, cardElement));
+                handContainer.appendChild(cardElement);
+            });
+            playerHandsDiv.appendChild(handContainer);
+
+            // Display Kitty cards
+            const kittyDiv = document.createElement('div');
+            kittyDiv.innerHTML = '<h3>Kitty Cards</h3>';
+            const kittyContainer = document.createElement('div');
+            kittyContainer.className = 'cards-container kitty-cards';
+            
+            kittyCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card selectable kitty-card';
+                cardElement.innerHTML = formatCard(card);
+                cardElement.dataset.card = card;
+                cardElement.addEventListener('click', () => toggleCardSelection(card, cardElement));
+                kittyContainer.appendChild(cardElement);
+            });
+            kittyDiv.appendChild(kittyContainer);
+            playerHandsDiv.appendChild(kittyDiv);
+            
+            // Selection counter
+            const counterDiv = document.createElement('p');
+            counterDiv.id = 'selection-counter';
+            counterDiv.style.fontSize = '0.9em';
+            counterDiv.innerText = `Selected: 0/5 cards`;
+            playerHandsDiv.appendChild(counterDiv);
+
+            // Display trump suit selection
+            const trumpSelectionDiv = document.getElementById('trump-selection');
+            trumpSelectionDiv.innerHTML = '<h3>Select Trump Suit</h3>';
+            
+            const trumpButtonsContainer = document.createElement('div');
+            trumpButtonsContainer.style.cssText = 'display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 8px 0;';
+            
+            const suits = [
+                { name: 'Hearts', symbol: '♥', color: '#ef4444' },
+                { name: 'Diamonds', symbol: '♦', color: '#ef4444' },
+                { name: 'Clubs', symbol: '♣', color: '#1a1a1a' },
+                { name: 'Spades', symbol: '♠', color: '#1a1a1a' }
+            ];
+            
+            suits.forEach(({ name, symbol, color }) => {
+                const suitButton = document.createElement('button');
+                const isRed = (name === 'Hearts' || name === 'Diamonds');
+                suitButton.innerHTML = `<span style="font-size: 1.5em; display: block;">${symbol}</span><span style="font-size: 0.8em;">${name}</span>`;
+                suitButton.dataset.suit = name;
+                suitButton.style.cssText = `
+                    padding: 10px 15px;
+                    font-size: 1em;
+                    cursor: pointer;
+                    border: 2px solid #888;
+                    border-radius: 8px;
+                    background: rgba(255, 255, 255, 0.95);
+                    color: ${isRed ? '#dc2626' : '#1a1a1a'};
+                    transition: all 0.2s ease;
+                    min-width: 70px;
+                `;
+                suitButton.addEventListener('mouseenter', () => {
+                    if (!suitButton.classList.contains('selected-trump')) {
+                        suitButton.style.background = 'rgba(255, 255, 255, 1)';
+                        suitButton.style.transform = 'scale(1.05)';
+                    }
+                });
+                suitButton.addEventListener('mouseleave', () => {
+                    if (!suitButton.classList.contains('selected-trump')) {
+                        suitButton.style.background = 'rgba(255, 255, 255, 0.95)';
+                        suitButton.style.transform = 'scale(1)';
+                    }
+                });
+                suitButton.addEventListener('click', () => selectTrumpSuit(name));
+                trumpButtonsContainer.appendChild(suitButton);
+            });
+            
+            trumpSelectionDiv.appendChild(trumpButtonsContainer);
+            
+            // Add selected trump indicator
+            const selectedIndicator = document.createElement('div');
+            selectedIndicator.id = 'trump-indicator';
+            selectedIndicator.style.cssText = 'text-align: center; font-size: 1.2em; margin-top: 10px; min-height: 30px;';
+            selectedIndicator.innerHTML = '<span style="color: #888;">Tap a suit to select trump</span>';
+            trumpSelectionDiv.appendChild(selectedIndicator);
+
+            // Display confirm button
+            const confirmDiv = document.getElementById('confirm-selection');
+            confirmDiv.innerHTML = '';
+            const confirmButton = document.createElement('button');
+            confirmButton.innerText = 'Confirm';
+            confirmButton.addEventListener('click', confirmSelection);
+            confirmDiv.appendChild(confirmButton);
+        }
+
+        // Function to toggle card selection
+        function toggleCardSelection(card, cardElement) {
+            if (selectedCards.includes(card)) {
+                // Deselect
+                selectedCards = selectedCards.filter(c => c !== card);
+                cardElement.classList.remove('selected');
+                cardElement.style.transform = '';
+                cardElement.style.boxShadow = '';
+                cardElement.style.border = '2px solid #ccc';
+                document.getElementById('game-message').innerText = '';
+            } else if (selectedCards.length < 5) {
+                // Select
+                selectedCards.push(card);
+                cardElement.classList.add('selected');
+                // Enhanced visual feedback - similar to trump selection
+                cardElement.style.transform = 'translateY(-8px) scale(1.05)';
+                cardElement.style.boxShadow = '0 0 15px #22c55e, 0 8px 20px rgba(0,0,0,0.3)';
+                cardElement.style.border = '3px solid #22c55e';
+                document.getElementById('game-message').innerText = '';
+            } else {
+                // Already have 5 cards - show helpful message and highlight the card they tried to select
+                document.getElementById('game-message').innerHTML = '<span style="color: #fbbf24;">⚠️ 5 cards selected. Tap a selected card to deselect first</span>';
+                // Briefly highlight the card they tried to add
+                cardElement.style.boxShadow = '0 0 15px #fbbf24';
+                setTimeout(() => {
+                    cardElement.style.boxShadow = '';
+                }, 1000);
+                return;
+            }
+            
+            // Update counter with visual indicator
+            const counter = document.getElementById('selection-counter');
+            if (counter) {
+                const dots = '●'.repeat(selectedCards.length) + '○'.repeat(5 - selectedCards.length);
+                const color = selectedCards.length === 5 ? '#22c55e' : '#fbbf24';
+                counter.innerHTML = `<span style="font-size: 1em; letter-spacing: 3px;">${dots}</span><br><span style="color: ${color}; font-size: 0.9em;">Selected: ${selectedCards.length}/5 cards</span>`;
+            }
+            
+            // Update message if both trump and cards are ready
+            if (selectedCards.length === 5 && trumpSuit) {
+                document.getElementById('game-message').innerHTML = `<span style="color: #22c55e; font-size: 1.1em;">✓ Ready - tap Confirm to continue</span>`;
+            } else if (selectedCards.length === 5 && !trumpSuit) {
+                document.getElementById('game-message').innerHTML = `<span style="color: #fbbf24;">✓ 5 cards selected. Now select trump</span>`;
+            } else if (trumpSuit) {
+                const msgTrumpColor = (trumpSuit === 'Hearts' || trumpSuit === 'Diamonds') ? '#dc2626' : '#333';
+                document.getElementById('game-message').innerHTML = `<span style="color: #fbbf24;">✓ Trump: <span style="color: ${msgTrumpColor}; background: #fff; padding: 1px 4px; border-radius: 3px;">${trumpSuit}</span>. Select ${5 - selectedCards.length} more card${5 - selectedCards.length > 1 ? 's' : ''}</span>`;
+            }
+        }
+
+        // Function to select the trump suit
+        function selectTrumpSuit(suit) {
+            trumpSuit = suit;
+            
+            const suitSymbols = { 'Hearts': '♥', 'Diamonds': '♦', 'Clubs': '♣', 'Spades': '♠' };
+            const suitColors = { 'Hearts': '#ef4444', 'Diamonds': '#ef4444', 'Clubs': '#fff', 'Spades': '#fff' };
+            
+            // Update button styles - clear all first, then highlight selected
+            const trumpButtons = document.querySelectorAll('#trump-selection button');
+            trumpButtons.forEach(btn => {
+                btn.classList.remove('selected-trump');
+                const btnSuit = btn.dataset.suit;
+                const isRed = (btnSuit === 'Hearts' || btnSuit === 'Diamonds');
+                btn.style.background = 'rgba(255, 255, 255, 0.95)';
+                btn.style.color = isRed ? '#dc2626' : '#1a1a1a';
+                btn.style.border = '2px solid #888';
+                btn.style.transform = 'scale(1)';
+                btn.style.boxShadow = 'none';
+            });
+            
+            // Find and highlight the selected button
+            trumpButtons.forEach(btn => {
+                if (btn.dataset.suit === suit) {
+                    btn.classList.add('selected-trump');
+                    btn.style.background = '#d4af37';
+                    btn.style.color = '#1a1a1a';
+                    btn.style.border = '3px solid #e8c547';
+                    btn.style.transform = 'scale(1.1)';
+                    btn.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
+                }
+            });
+            
+            // Update the trump indicator with colored suit
+            const indicator = document.getElementById('trump-indicator');
+            if (indicator) {
+                const suitColor = (suit === 'Hearts' || suit === 'Diamonds') ? '#dc2626' : '#1a1a1a';
+                indicator.innerHTML = `<span style="color: #d4af37; font-weight: bold;">✓ Trump: <span style="color: ${suitColor}; background: #fff; padding: 2px 6px; border-radius: 4px;">${suitSymbols[suit]} ${suit}</span></span>`;
+            }
+            
+            // Update message based on whether cards are also selected
+            if (selectedCards.length === 5) {
+                document.getElementById('game-message').innerHTML = `<span style="color: #22c55e; font-size: 1.1em;">✓ Ready - tap Confirm to continue</span>`;
+            } else {
+                document.getElementById('game-message').innerHTML = `<span style="color: #fbbf24;">Select ${5 - selectedCards.length} more card${5 - selectedCards.length > 1 ? 's' : ''} to keep</span>`;
+            }
+        }
+
+        // Function to confirm the selection
+        function confirmSelection() {
+            if (selectedCards.length !== 5) {
+                const needed = 5 - selectedCards.length;
+                document.getElementById('game-message').innerHTML = `<span style="color: #ef4444;">⚠️ Select ${needed} more card${needed > 1 ? 's' : ''} (5 required)</span>`;
+                // Briefly highlight the cards area
+                const cardsArea = document.getElementById('player-hands');
+                cardsArea.style.boxShadow = '0 0 15px #ef4444';
+                setTimeout(() => { cardsArea.style.boxShadow = ''; }, 1500);
+                return;
+            }
+            if (!trumpSuit) {
+                document.getElementById('game-message').innerHTML = `<span style="color: #ef4444;">⚠️ Select a trump suit to continue</span>`;
+                // Briefly highlight the trump area
+                const trumpArea = document.getElementById('trump-selection');
+                trumpArea.style.boxShadow = '0 0 15px #ef4444';
+                setTimeout(() => { trumpArea.style.boxShadow = ''; }, 1500);
+                return;
+            }
+
+            fetch(`${API_URL}?endpoint=selectKittyAndTrump`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameId=${gameId}&playerId=${currentPlayerId}&selectedCards=${JSON.stringify(selectedCards)}&trumpSuit=${trumpSuit}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                    } else {
+                        document.getElementById('game-message').innerText = 'Selection confirmed';
+                        selectedCards = [];
+                        fetchGameState(); // Refresh to move to trick phase
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        }
+
+        // Function to play a card
+        function playCard(card) {
+            playSound('play');
+            fetch(`${API_URL}?endpoint=playCard`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameId=${gameId}&playerId=${currentPlayerId}&card=${encodeURIComponent(card)}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        // Check if it's the reneging error - show without "Error:" prefix
+                        if (data.error.includes('reneging') || data.error.includes('follow suit')) {
+                            document.getElementById('game-message').innerText = `📢 ${data.error}`;
+                            // Don't clear this message - it will persist until next card play
+                        } else {
+                            document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                        }
+                    } else {
+                        document.getElementById('game-message').innerText = '';
+                        // If round summary, use embedded state directly
+                        if (data.phase === 'round_summary' && data.gameState) {
+                            showRoundSummary(data.gameState);
+                            updateScoreboard(data.gameState);
+                        } else {
+                            fetchGameState(); // Refresh the game state
+                        }
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        }
+        
+        // Function to clear the trick complete state and continue
+        function clearTrickComplete() {
+            fetch(`${API_URL}?endpoint=clearTrickComplete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameId=${gameId}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    fetchGameState(); // Refresh to show new trick
+                })
+                .catch(error => {
+                    console.error('Error clearing trick:', error);
+                    fetchGameState(); // Still try to refresh
+                });
+        }
+
+        let lobbyPollingInterval = null;
+
+        // Function to refresh the player list in the lobby
+        function refreshPlayerList() {
+            fetch(`${API_URL}?endpoint=getPlayers&gameId=${gameId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching players:', data.error);
+                        return;
+                    }
+                    const playersUl = document.getElementById('players-ul');
+                    playersUl.innerHTML = '';
+                    data.players.forEach(player => {
+                        const li = document.createElement('li');
+                        li.innerText = player.name + (player.player_id == currentPlayerId ? ' (You)' : '');
+                        playersUl.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching players:', error);
+                });
+        }
+
+        // Start auto-refreshing the lobby player list
+        function startLobbyPolling() {
+            if (lobbyPollingInterval) {
+                clearInterval(lobbyPollingInterval);
+            }
+            lobbyPollingInterval = setInterval(() => {
+                refreshPlayerList();
+            }, 3000); // Refresh every 3 seconds
+        }
+
+        // Stop lobby polling
+        function stopLobbyPolling() {
+            if (lobbyPollingInterval) {
+                clearInterval(lobbyPollingInterval);
+                lobbyPollingInterval = null;
+            }
+        }
+
+        // Function to start the game (deal cards and start bidding)
+        function startGame() {
+            document.getElementById('game-message').innerText = 'Starting game...';
+            
+            // First deal cards
+            fetch(`${API_URL}?endpoint=dealCards`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameId=${gameId}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    // Then start bidding
+                    return fetch(`${API_URL}?endpoint=startBidding`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: `gameId=${gameId}`
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    document.getElementById('game-message').innerText = '📢 Game started! Bidding phase begun.';
+                    document.getElementById('lobby-area').style.display = 'none';
+                    stopLobbyPolling(); // Stop lobby refresh
+                    showBiddingPhase();
+                    fetchGameState();
+                    startPollingGameState();
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error starting game: ${error.message}`;
+                });
+        }
+
+        // Function to poll game state periodically
+        function startPollingGameState() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            pollingInterval = setInterval(() => {
+                fetchGameState();
+            }, 2000); // Poll every 2 seconds
+        }
+
+        // Function to stop polling
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // Event listener for start game button
+        document.getElementById('start-game').addEventListener('click', startGame);
+        
+        // Event listener for leave game button
+        document.getElementById('leave-game').addEventListener('click', leaveGame);
+        
+        // Function to leave the game and clear session
+        function leaveGame() {
+            if (confirm('Are you sure you want to leave this game?')) {
+                clearSession();
+                stopPolling();
+                stopLobbyPolling();
+                
+                // Reset all state variables
+                gameId = null;
+                gameCode = null;
+                currentPlayerId = null;
+                isGameCreator = false;
+                selectedCards = [];
+                trumpSuit = null;
+                
+                // Reset UI
+                document.getElementById('game-container').style.display = 'block'; // Show form container
+                document.getElementById('game-form').style.display = 'flex';
+                document.getElementById('lobby-area').style.display = 'none';
+                document.getElementById('bidding-area').style.display = 'none';
+                document.getElementById('gameplay-container').style.display = 'none';
+                document.getElementById('game-footer').style.display = 'block'; // Show footer again
+                document.getElementById('game-message').innerText = '';
+                document.getElementById('player-name').value = '';
+                document.getElementById('game-code').value = '';
+            }
+        }
+
+        // Event listener for creating a game
+        document.getElementById('create-game').addEventListener('click', function() {
+            console.log('Create game button clicked');
+            const playerName = document.getElementById('player-name').value;
+            console.log('Player name:', playerName);
+            if (!playerName) {
+                document.getElementById('game-message').innerText = 'Please enter your name.';
+                return;
+            }
+
+            console.log('Sending createGame request...');
+            fetch(`${API_URL}?endpoint=createGame`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `playerName=${encodeURIComponent(playerName)}`
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        gameCode = data.gameCode;
+                        gameId = data.gameId;
+                        currentPlayerId = data.playerId;
+                        isGameCreator = true;
+                        
+                        // Reset swap state for new game
+                        swapSelectedCards = [];
+                        hasCompletedSwap = false;
+                        
+                        document.getElementById('game-message').innerText = `Game created! Share the code with other players.`;
+                        document.getElementById('game-form').style.display = 'none';
+                        document.getElementById('lobby-area').style.display = 'block';
+                        document.getElementById('display-game-code').innerText = gameCode;
+                        document.getElementById('start-game').style.display = 'inline-block';
+                        
+                        saveSession(); // Save session for refresh recovery
+                        refreshPlayerList();
+                        startLobbyPolling(); // Auto-refresh player list
+                    } else {
+                        document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        });
+
+        // Event listener for joining a game
+        document.getElementById('join-game').addEventListener('click', function() {
+            const playerName = document.getElementById('player-name').value;
+            const inputGameCode = document.getElementById('game-code').value;
+            if (!playerName || !inputGameCode) {
+                document.getElementById('game-message').innerText = 'Please enter your name and game code.';
+                return;
+            }
+
+            fetch(`${API_URL}?endpoint=joinGame`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `gameCode=${encodeURIComponent(inputGameCode)}&playerName=${encodeURIComponent(playerName)}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        gameCode = inputGameCode;
+                        gameId = data.gameId;
+                        currentPlayerId = data.playerId;
+                        isGameCreator = false;
+                        
+                        // Reset swap state for new game
+                        swapSelectedCards = [];
+                        hasCompletedSwap = false;
+                        
+                        document.getElementById('game-message').innerText = '📢 Successfully joined! Waiting for the host to start the game...';
+                        document.getElementById('game-form').style.display = 'none';
+                        document.getElementById('lobby-area').style.display = 'block';
+                        document.getElementById('display-game-code').innerText = gameCode;
+                        
+                        saveSession(); // Save session for refresh recovery
+                        refreshPlayerList();
+                        startLobbyPolling(); // Auto-refresh player list
+                        startPollingGameState(); // Check when game starts
+                    } else {
+                        document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                });
+        });
+
+        // ============ Session Persistence ============
+        
+        // Save session to localStorage
+        function saveSession() {
+            if (gameId && currentPlayerId) {
+                const session = {
+                    gameId: gameId,
+                    gameCode: gameCode,
+                    currentPlayerId: currentPlayerId,
+                    isGameCreator: isGameCreator,
+                    playerName: document.getElementById('player-name')?.value || ''
+                };
+                localStorage.setItem('110game_session', JSON.stringify(session));
+                console.log('Session saved:', session);
+            }
+        }
+
+        // Load session from localStorage
+        function loadSession() {
+            const sessionStr = localStorage.getItem('110game_session');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    console.log('Session found:', session);
+                    return session;
+                } catch (e) {
+                    console.error('Failed to parse session:', e);
+                }
+            }
+            return null;
+        }
+
+        // Clear session from localStorage
+        function clearSession() {
+            localStorage.removeItem('110game_session');
+            console.log('Session cleared');
+        }
+
+        // Restore session and rejoin game
+        async function restoreSession() {
+            const session = loadSession();
+            if (!session) return false;
+
+            try {
+                // Verify the game still exists and player is still in it
+                const response = await fetch(`${API_URL}?endpoint=verifySession&gameId=${session.gameId}&playerId=${session.currentPlayerId}`);
+                const data = await response.json();
+
+                if (data.valid) {
+                    // Restore session variables
+                    gameId = session.gameId;
+                    gameCode = session.gameCode;
+                    currentPlayerId = session.currentPlayerId;
+                    isGameCreator = session.isGameCreator;
+
+                    // Hide form, show appropriate UI
+                    document.getElementById('game-form').style.display = 'none';
+                    document.getElementById('game-message').innerText = 'Session restored! Rejoining game...';
+
+                    // Fetch current game state to determine what to show
+                    fetchGameState();
+                    startPollingGameState();
+
+                    return true;
+            } else {
+                    // Game or player no longer valid
+                    clearSession();
+                    return false;
+                }
+            } catch (e) {
+                console.error('Failed to restore session:', e);
+                clearSession();
+                return false;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = async function () {
+            // First, check if server is running (for on-demand hosting)
+            const serverUp = await checkAndShowServerStatus();
+            
+            if (!serverUp) {
+                // Server is down, wake-up screen is shown
+                // Don't try to restore session until server is up
+                return;
+            }
+            
+            // Server is up, try to restore previous session
+            const restored = await restoreSession();
+            
+            if (!restored) {
+                // No session to restore, show the form
+                document.getElementById('game-form').style.display = 'flex';
+            }
+            
+            // Connect WebSocket
+            connectWebSocket();
+        };
+
+        // Save session whenever game state changes
+        function onGameJoinedOrCreated() {
+            saveSession();
+        }
+    </script>
+    
+    <footer id="game-footer" style="position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; text-align: center; background: rgba(26, 26, 26, 0.95); border-top: 1px solid #333;">
+        <a id="stats-link" href="statistics.html" style="color: #d4af37; text-decoration: none; font-size: 0.85em;">📊 Game Statistics</a>
+    </footer>
+</body>
+</html>

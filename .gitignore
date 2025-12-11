@@ -1,0 +1,34 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment & secrets
+.env
+.env.local
+.env.production
+
+# Logs
+error_log.txt
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Composer
+composer.phar
+
+# Testing
+coverage/
+.phpunit.result.cache
+
+# SQLite Database (production data)
+/data/*.db
+!/data/.gitkeep
+

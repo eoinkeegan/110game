@@ -1,0 +1,839 @@
+/* 110 Card Game - Stylesheet */
+
+/* CSS Variables for theming */
+:root {
+    --bg-felt: #1a472a;
+    --bg-felt-light: #2d5a3d;
+    --bg-card: #fff;
+    --text-primary: #f0f0f0;
+    --text-dark: #1a1a1a;
+    --accent-gold: #d4af37;
+    --accent-gold-light: #e8c547;
+    --card-red: #c41e3a;
+    --card-black: #1a1a1a;
+    --btn-primary: #2563eb;
+    --btn-primary-hover: #1d4ed8;
+    --btn-danger: #dc2626;
+    --btn-success: #16a34a;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, var(--bg-felt) 0%, var(--bg-felt-light) 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+}
+
+h1, h2, h3, h4 {
+    margin: 0 0 4px 0;
+    color: var(--accent-gold);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+h3 {
+    font-size: 0.95em;
+    margin-bottom: 3px;
+}
+
+/* Game title */
+.game-title {
+    text-align: center;
+    padding: 8px 0;
+    margin: 0;
+    background: #2a2a2a;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.game-title h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px;
+    margin: 0;
+    padding: 0;
+    text-transform: lowercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+/* Container styling */
+#game-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px;
+    padding-bottom: 70px;
+}
+
+/* Form styling */
+#game-form {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+    margin: 20px auto;
+}
+
+#game-form input {
+    padding: 16px 20px;
+    font-size: 18px;
+    border: 2px solid var(--accent-gold);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-dark);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    min-width: 280px;
+    margin: 4px;
+}
+
+#game-form input:focus {
+    outline: none;
+    border-color: var(--accent-gold-light);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+#game-form input::placeholder {
+    color: #888;
+}
+
+/* Button styling */
+button {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#create-game, #join-game {
+    padding: 16px 32px;
+    font-size: 18px;
+    font-weight: 600;
+    min-width: 160px;
+    margin: 4px;
+}
+
+#create-game {
+    background: linear-gradient(135deg, var(--btn-success) 0%, #15803d 100%);
+    color: white;
+}
+
+#create-game:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+}
+
+#join-game {
+    background: linear-gradient(135deg, var(--btn-primary) 0%, #1e40af 100%);
+    color: white;
+}
+
+#join-game:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+/* Lobby area */
+#lobby-area {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    margin: 15px auto;
+    text-align: center;
+}
+
+#display-game-code {
+    font-size: 32px;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-gold);
+    letter-spacing: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 10px 20px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+#player-list {
+    text-align: left;
+    margin: 20px 0;
+}
+
+#players-ul {
+    list-style: none;
+    padding: 0;
+}
+
+#players-ul li {
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 5px 0;
+    border-radius: 5px;
+    border-left: 3px solid var(--accent-gold);
+}
+
+#start-game {
+    background: linear-gradient(135deg, var(--accent-gold) 0%, #b8962e 100%);
+    color: var(--text-dark);
+    font-size: 18px;
+    padding: 15px 40px;
+    margin-top: 15px;
+}
+
+#start-game:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+}
+
+#refresh-lobby {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    margin-top: 10px;
+}
+
+#refresh-lobby:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+#leave-game {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    margin-top: 10px;
+}
+
+#leave-game:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+
+/* Game message */
+#game-message {
+    text-align: center;
+    padding: 8px 12px;
+    margin: 6px auto;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 16px;
+    max-width: 600px;
+    color: #ffffff;
+}
+
+#game-message:empty {
+    display: none;
+}
+
+/* Bidding area */
+#bidding-area {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    margin: 5px auto;
+    text-align: center;
+}
+
+.bid-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.bid-buttons button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #d4af37;
+    color: #d4af37;
+    width: 60px;
+    height: 60px;
+    min-width: unset;
+    padding: 0;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+.bid-buttons button:hover {
+    transform: translateY(-2px);
+    background: rgba(212, 175, 55, 0.2);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.bid-buttons button.pass-btn {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.bid-buttons button.pass-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.bid-buttons button.match-btn {
+    background: rgba(212, 175, 55, 0.3);
+    border-color: #d4af37;
+    color: #1a1a1a;
+    width: auto;
+    padding: 0 15px;
+}
+
+.bid-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Gameplay container */
+#gameplay-container {
+    max-width: 600px;
+    margin: 5px auto;
+    padding: 5px;
+}
+
+/* Player hands */
+#player-hands {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 6px;
+}
+
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    padding: 4px 0;
+}
+
+/* Card styling - 5:7 aspect ratio (standard playing card) */
+/* Desktop: 85px wide ensures 5 cards fit in a row */
+.card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 85px;
+    aspect-ratio: 5 / 7;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--card-black);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    cursor: default;
+    position: relative;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Suit colors for trump display */
+.suit-red { color: #dc2626 !important; }
+.suit-black { color: #1a1a1a !important; }
+
+/* Card images */
+.card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.card-img-small {
+    width: 40px;
+    height: auto;
+    border-radius: 4px;
+}
+
+.card.hand-card {
+    cursor: pointer;
+}
+
+.card.playable {
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.7), 0 4px 12px rgba(0, 0, 0, 0.3);
+    outline: 3px solid var(--accent-gold);
+    outline-offset: -3px;
+}
+
+.card.playable:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.9), 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+.card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.card.selected {
+    transform: translateY(-15px);
+    box-shadow: 0 0 20px rgba(22, 163, 74, 0.8), 0 8px 20px rgba(0, 0, 0, 0.3);
+    outline: 3px solid var(--btn-success);
+    outline-offset: -3px;
+}
+
+.card.selectable {
+    cursor: pointer;
+}
+
+.card.selectable:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.card.trump-card {
+    outline: 3px solid var(--accent-gold);
+    outline-offset: -3px;
+}
+
+.card.kitty-card {
+    /* Kitty cards use same styling as regular cards */
+}
+
+/* Trick area */
+#trick-area {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 8px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    margin-bottom: 6px;
+    min-height: 80px;
+}
+
+.trick-cards {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.played-card {
+    width: 70px;
+    aspect-ratio: 5 / 7;
+}
+
+/* Trump selection */
+#trump-selection {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+#trump-selection button {
+    margin: 5px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid transparent;
+}
+
+#trump-selection button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+#trump-selection button.selected-trump {
+    background: var(--accent-gold);
+    color: var(--text-dark);
+    border-color: var(--accent-gold-light);
+}
+
+/* Confirm selection */
+#confirm-selection {
+    text-align: center;
+    margin-top: 15px;
+}
+
+#confirm-selection button {
+    background: linear-gradient(135deg, var(--btn-success) 0%, #15803d 100%);
+    color: white;
+    font-size: 18px;
+    padding: 15px 50px;
+}
+
+#confirm-selection button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
+}
+
+/* Selection counter */
+#selection-counter {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Statistics sections - hide on main game page */
+#overall-stats,
+#game-history,
+#game-details {
+    display: none;
+}
+
+/* Statistics page specific styles */
+body.statistics-page #overall-stats,
+body.statistics-page #game-history,
+body.statistics-page #game-details {
+    display: block;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 25px;
+    border-radius: 15px;
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+/* Responsive design - removed duplicate */
+
+/* Animation for cards - only on initial deal */
+@keyframes dealCard {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) rotate(-10deg);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) rotate(0);
+    }
+}
+
+/* Animation only applies to cards with .animate-deal class */
+.cards-container .card.animate-deal {
+    animation: dealCard 0.3s ease-out forwards;
+}
+
+.cards-container .card.animate-deal:nth-child(1) { animation-delay: 0.05s; }
+.cards-container .card.animate-deal:nth-child(2) { animation-delay: 0.1s; }
+.cards-container .card.animate-deal:nth-child(3) { animation-delay: 0.15s; }
+.cards-container .card.animate-deal:nth-child(4) { animation-delay: 0.2s; }
+.cards-container .card.animate-deal:nth-child(5) { animation-delay: 0.25s; }
+.cards-container .card.animate-deal:nth-child(6) { animation-delay: 0.3s; }
+.cards-container .card.animate-deal:nth-child(7) { animation-delay: 0.35s; }
+.cards-container .card.animate-deal:nth-child(8) { animation-delay: 0.4s; }
+.cards-container .card.animate-deal:nth-child(9) { animation-delay: 0.45s; }
+.cards-container .card.animate-deal:nth-child(10) { animation-delay: 0.5s; }
+
+/* Persistent Scoreboard */
+#scoreboard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(20, 20, 20, 0.98), rgba(30, 30, 30, 0.95));
+    border-top: 2px solid #d4af37;
+    padding: 8px 15px;
+    z-index: 100;
+}
+
+#scoreboard-content {
+    max-height: 140px; /* Shows header + ~4 rows */
+    overflow-y: auto;
+}
+
+.scoreboard-table {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 1em;
+}
+
+.scoreboard-table thead {
+    position: sticky;
+    top: 0;
+    background: #2a2a2a;
+}
+
+.scoreboard-table th {
+    color: #d4af37;
+    font-weight: bold;
+    padding: 6px 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+}
+
+.scoreboard-table th:last-child {
+    text-align: right;
+}
+
+.scoreboard-table td {
+    padding: 8px 12px;
+    color: #ccc;
+    border-bottom: 1px solid #333;
+}
+
+.scoreboard-table .score-cell {
+    text-align: right;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #fff;
+}
+
+.scoreboard-table tr.is-me td {
+    color: #d4af37;
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.scoreboard-table tr.is-me .score-cell {
+    color: #d4af37;
+}
+
+/* Mobile-first responsive styles */
+@media (max-width: 768px) {
+    body {
+        font-size: 15px;
+    }
+    
+    #game-container {
+        padding: 5px;
+        padding-bottom: 55px;
+    }
+    
+    #game-form {
+        padding: 20px 15px;
+        margin: 10px auto;
+        gap: 12px;
+    }
+    
+    #game-form input {
+        width: 100%;
+        padding: 16px 18px;
+        font-size: 18px;
+        margin: 5px 0;
+        min-width: unset;
+    }
+    
+    #create-game, #join-game {
+        width: 100%;
+        padding: 18px 24px;
+        font-size: 18px;
+        margin: 5px 0;
+        min-height: 60px;
+    }
+    
+    h1 { font-size: 1.1em; margin-bottom: 3px; }
+    h2 { font-size: 0.95em; margin-bottom: 3px; }
+    h3 { font-size: 0.85em; margin-bottom: 2px; }
+    h4 { font-size: 0.8em; margin-bottom: 2px; }
+    
+    .game-title {
+        padding: 6px 0 !important;
+        margin: 0 !important;
+    }
+    
+    .game-title h1 {
+        font-size: 15px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    button {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    
+    /* Compact lobby */
+    #lobby-area {
+        padding: 12px;
+        margin: 10px auto;
+        border-radius: 10px;
+    }
+    
+    #display-game-code {
+        font-size: 20px;
+        letter-spacing: 2px;
+        padding: 6px 12px;
+    }
+    
+    #players-ul li {
+        padding: 6px 10px;
+        margin: 3px 0;
+    }
+    
+    #start-game {
+        font-size: 14px;
+        padding: 10px 25px;
+    }
+    
+    /* Mobile cards - fit 5 in a row on 375px screen, maintain 5:7 ratio */
+    .card {
+        width: 58px;
+        aspect-ratio: 5 / 7;
+        font-size: 24px;
+        border-radius: 6px;
+    }
+    
+    .card-img {
+        border-radius: 4px;
+    }
+    
+    .cards-container {
+        gap: 3px;
+        padding: 4px 0;
+    }
+    
+    .card.playable:hover,
+    .card.selected {
+        transform: translateY(-6px);
+    }
+    
+    .card.selectable:hover {
+        transform: translateY(-3px);
+    }
+    
+    /* Compact gameplay */
+    #gameplay-container {
+        padding: 5px;
+        margin: 5px auto;
+    }
+    
+    #player-hands {
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+    }
+    
+    #trick-area {
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        min-height: 80px;
+    }
+    
+    .trick-cards {
+        gap: 6px !important;
+    }
+    
+    .played-card {
+        width: 50px !important;
+        aspect-ratio: 5 / 7 !important;
+    }
+    
+    /* Compact trump selection */
+    #trump-selection {
+        padding: 8px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+    }
+    
+    #trump-selection button {
+        padding: 6px 8px !important;
+        min-width: 55px !important;
+        margin: 3px !important;
+        border-radius: 6px !important;
+    }
+    
+    #trump-selection button span:first-child {
+        font-size: 1.2em !important;
+    }
+    
+    #trump-selection button span:last-child {
+        font-size: 0.6em !important;
+    }
+    
+    #trump-indicator {
+        font-size: 0.9em !important;
+        margin-top: 6px !important;
+    }
+    
+    /* Compact confirm button */
+    #confirm-selection {
+        margin-top: 8px;
+    }
+    
+    #confirm-selection button {
+        font-size: 13px;
+        padding: 10px 30px;
+    }
+    
+    /* Compact bidding */
+    #bidding-area {
+        padding: 12px;
+        margin: 8px auto;
+        border-radius: 10px;
+    }
+    
+    .bid-buttons {
+        gap: 8px !important;
+        margin-top: 8px;
+    }
+    
+    .bid-buttons button {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+    }
+    
+    .bid-buttons button.match-btn {
+        width: auto;
+        padding: 0 12px;
+    }
+    
+    /* Mobile scoreboard table */
+    #scoreboard {
+        padding: 6px 10px;
+        border-top-width: 2px;
+    }
+    
+    #scoreboard-content {
+        max-height: 120px; /* Shows header + ~4 rows on mobile */
+    }
+    
+    .scoreboard-table {
+        font-size: 0.9em;
+        max-width: 250px;
+    }
+    
+    .scoreboard-table th,
+    .scoreboard-table td {
+        padding: 5px 10px;
+    }
+    
+    .scoreboard-table .score-cell {
+        font-size: 1em;
+    }
+    
+    /* Compact messages */
+    #game-message {
+        font-size: 0.95em;
+        padding: 6px 10px;
+        margin: 4px auto;
+    }
+    
+    /* Round summary compact */
+    #player-hands table {
+        font-size: 0.85em;
+    }
+    
+    #player-hands table th,
+    #player-hands table td {
+        padding: 6px 4px !important;
+    }
+    
+    #continue-round-btn {
+        padding: 10px 25px !important;
+        font-size: 1em !important;
+        margin-top: 15px !important;
+    }
+}
