@@ -11,15 +11,16 @@ header('Content-Type: application/json');
 // Load configuration
 $config = require __DIR__ . '/config.php';
 
-// Allow HTTP for local testing
-if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
-    $isLocalhost = in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1']);
-    $isDevelopment = ($config['app']['env'] ?? 'development') === 'development';
-    if (!$isLocalhost && !$isDevelopment) {
-        echo json_encode(['error' => 'HTTPS is required for secure communication.']);
-        exit();
-    }
-}
+// HTTPS check - disabled for initial deployment
+// TODO: Enable HTTPS with a domain and Let's Encrypt certificate
+// if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+//     $isLocalhost = in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1']);
+//     $isDevelopment = ($config['app']['env'] ?? 'development') === 'development';
+//     if (!$isLocalhost && !$isDevelopment) {
+//         echo json_encode(['error' => 'HTTPS is required for secure communication.']);
+//         exit();
+//     }
+// }
 
 // SQLite database path
 $dbPath = __DIR__ . '/data/game.db';
