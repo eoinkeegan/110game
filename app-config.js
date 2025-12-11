@@ -9,24 +9,13 @@
 
 const APP_CONFIG = {
     // Lambda function URL for server control (start/stop/status)
-    // Set this after deploying your Lambda + API Gateway
-    // Example: 'https://abc123.execute-api.us-east-1.amazonaws.com/prod/server'
-    LAMBDA_URL: '',  // Empty = assume server is always on (local dev mode)
+    LAMBDA_URL: 'https://n02np6kntk.execute-api.eu-north-1.amazonaws.com/server',
     
-    // Game server URL (where game.php runs)
-    // For local development: leave empty (uses same origin)
-    // For production S3 + EC2: set to your EC2 domain
-    // Example: 'https://game.your-domain.com'
-    GAME_SERVER_URL: '',
+    // Game server URL (EC2 instance)
+    GAME_SERVER_URL: 'http://13.48.48.184',
     
     // WebSocket server URL
-    // Automatically determined based on protocol and hostname
-    WS_URL: (function() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.hostname;
-        const port = 8081;
-        return `${protocol}//${host}:${port}`;
-    })(),
+    WS_URL: 'ws://13.48.48.184:8081',
     
     // Enable debug logging
     DEBUG: window.location.hostname === 'localhost',
