@@ -416,6 +416,9 @@
                 return true;
             }
             
+            // Hide game container immediately while we check (prevents flash)
+            gameContainer.style.display = 'none';
+            
             // Check server status via health endpoint first
             try {
                 const healthCheck = await fetch(window.getApiUrl('health'), {
