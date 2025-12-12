@@ -11,11 +11,12 @@ const APP_CONFIG = {
     // Lambda function URL for server control (start/stop/status)
     LAMBDA_URL: 'https://n02np6kntk.execute-api.eu-north-1.amazonaws.com/server',
     
-    // Game server URL (EC2 instance - Elastic IP)
-    GAME_SERVER_URL: 'http://51.21.235.197',
+    // Game server URL (via CloudFront for HTTPS)
+    GAME_SERVER_URL: 'https://110.eoinkeegan.com',
     
-    // WebSocket server URL
-    WS_URL: 'ws://51.21.235.197:8081',
+    // WebSocket server URL - disabled for HTTPS (game uses polling fallback)
+    // To enable: set up SSL on EC2 with Let's Encrypt
+    WS_URL: '',  // Empty = skip WebSocket, use polling only
     
     // Enable debug logging
     DEBUG: window.location.hostname === 'localhost',

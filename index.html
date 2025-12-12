@@ -419,37 +419,15 @@
             // Hide game container immediately while we check (prevents flash)
             gameContainer.style.display = 'none';
             
-            // Check server status via health endpoint first
-            try {
-                const healthCheck = await fetch(window.getApiUrl('health'), {
-                    signal: AbortSignal.timeout(5000)
-                });
-                if (healthCheck.ok) {
-                    serverReady = true;
-                    serverScreen.classList.remove('visible');
-                    gameContainer.style.display = 'block';
-                    return true;
-                }
-            } catch (e) {
-                // Server not responding
-            }
-            
-            // Check EC2 status via Lambda
+            // Check EC2 status via Lambda (works over HTTPS)
             const status = await window.checkServerStatus();
             
             if (status.running) {
-                // EC2 is running, try health check again
-                try {
-                    const healthCheck = await fetch(window.getApiUrl('health'), {
-                        signal: AbortSignal.timeout(5000)
-                    });
-                    if (healthCheck.ok) {
-                        serverReady = true;
-                        serverScreen.classList.remove('visible');
-                        gameContainer.style.display = 'block';
-                        return true;
-                    }
-                } catch (e) {}
+                // Lambda confirms EC2 is running - trust it and show game
+                serverReady = true;
+                serverScreen.classList.remove('visible');
+                gameContainer.style.display = 'block';
+                return true;
             }
             
             // Server not ready, show wake-up screen
@@ -775,8 +753,14 @@
         function connectWebSocket() {
             if (ws && ws.readyState === WebSocket.OPEN) return;
             
+            // Skip WebSocket if URL not configured (use polling fallback)
+            const wsUrl = window.APP_CONFIG?.WS_URL;
+            if (!wsUrl) {
+                console.log('WebSocket disabled, using polling only');
+                return;
+            }
+            
             try {
-                const wsUrl = window.APP_CONFIG?.WS_URL || 'ws://localhost:8081';
                 ws = new WebSocket(wsUrl);
                 
                 ws.onopen = () => {
