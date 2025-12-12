@@ -11,11 +11,11 @@ const APP_CONFIG = {
     // Lambda function URL for server control (start/stop/status)
     LAMBDA_URL: 'https://n02np6kntk.execute-api.eu-north-1.amazonaws.com/server',
     
-    // Game server URL (EC2 instance)
-    GAME_SERVER_URL: 'http://13.48.48.184',
+    // Game server URL (EC2 instance - Elastic IP)
+    GAME_SERVER_URL: 'http://51.21.235.197',
     
     // WebSocket server URL
-    WS_URL: 'ws://13.48.48.184:8081',
+    WS_URL: 'ws://51.21.235.197:8081',
     
     // Enable debug logging
     DEBUG: window.location.hostname === 'localhost',
