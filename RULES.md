@@ -14,7 +14,7 @@
 ## Game Flow
 
 ### 1. 🎯 Dealing
-- Each player receives **10 cards**
+- Each player receives **5 cards**
 - **5 cards** go to the **Kitty** (face down)
 - The dealer rotates each round
 
@@ -34,7 +34,7 @@ Players bid for the right to choose trump and take the kitty.
 ### 3. 🎴 Kitty Selection (Bid Winner Only)
 The bid winner:
 1. Sees the 5 kitty cards
-2. Combines them with their hand (now 15 cards)
+2. Combines them with their hand (now 10 cards)
 3. **Selects exactly 5 cards to keep**
 4. Discards the rest
 5. **Chooses the trump suit**
@@ -46,8 +46,8 @@ While the bid winner selects from the kitty, other players may swap cards:
 - 8 players: Swap up to **1 card**
 
 ### 4. ♠️ Trick Play
-- **10 tricks** are played per round
-- Bid winner leads the first trick
+- **5 tricks** are played per round
+- Player to the left of the bid winner leads the first trick
 - Winner of each trick leads the next
 
 **Following Suit:**
@@ -134,7 +134,7 @@ A reneging card is **forced out** when a higher-ranked reneging card is played i
 
 ### Trick Points
 - Each trick won = **5 points**
-- 10 tricks × 5 points = 50 points available per round
+- 5 tricks × 5 points = 25 points available per round
 
 ### Bid Winner Scoring
 - **Made the bid**: Earn your trick points normally
@@ -143,7 +143,7 @@ A reneging card is **forced out** when a higher-ranked reneging card is played i
 ### Top Trump Bonus
 - **+5 points** to whoever played the **highest trump card** in the round
 - This is typically the 5 of Trump, but could be lower if 5 wasn't dealt
-- **Exception**: If the bid winner bid **85 or higher**, they forfeit this bonus
+- **Exception**: If the bid winner has **85 points or more**, they forfeit this bonus
 
 ### Going Down the Hole
 If you fail your bid, you "go down the hole" - your bid amount is subtracted from your score. You can go negative!
@@ -193,7 +193,7 @@ NON-TRUMP BLACK:       K > Q > J > A > 2 > 3 > 4 > 5 > 6 > 7 > 8 > 9 > 10
 
 BIDS:                  15, 20, 25, 30
 SCORING:               5 points per trick
-TOP TRUMP BONUS:       +5 points (unless bid ≥85)
+TOP TRUMP BONUS:       +5 points (unless score ≥85)
 ```
 
 ---
