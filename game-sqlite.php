@@ -188,26 +188,40 @@ function getHighestRenegingCardPlayed($currentTrick, $trumpSuit) {
 }
 
 // Function to check if player must follow suit
+// Returns TRUE if player has non-reneging cards of lead suit, or reneging cards that are forced out
+// Returns FALSE if player can play any card (no lead suit cards, or only reneging cards that can be held back)
 function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
     $highestRenegingPlayed = getHighestRenegingCardPlayed($currentTrick, $trumpSuit);
     
     foreach ($playerCards as $card) {
+        // Joker has no suit - skip
         if ($card === 'Joker') continue;
         
         $cardSuit = substr($card, 0, 1);
         
+        // Only check cards that match the lead suit
         if ($cardSuit === $leadSuit) {
             if (isRenegingCard($card, $trumpSuit)) {
+                // This is a reneging card (5, J, Joker, A♥)
                 $cardRenegingRank = getRenegingCardRank($card, $trumpSuit);
+                // Reneging card is FORCED OUT only if a HIGHER reneging card was played
+                // Rank 4 = 5 of trump (highest, can never be forced)
+                // Rank 3 = J of trump (forced by 5)
+                // Rank 2 = Joker (forced by 5 or J)
+                // Rank 1 = A♥ (forced by 5, J, or Joker)
                 if ($highestRenegingPlayed > $cardRenegingRank) {
-                    return true;
+                    return true; // Must play this card - it's been forced out
                 }
+                // Otherwise, this reneging card can be held back - continue checking
             } else {
+                // Non-reneging card of lead suit - MUST follow suit
                 return true;
             }
         }
     }
     
+    // No cards of lead suit that must be played
+    // Player can play ANY card (trump or non-trump)
     return false;
 }
 
@@ -775,17 +789,40 @@ function playCard($gameId, $playerId, $card) {
     }
 
     // Validate following suit
+    // RENEGING RULES: The top 4 trumps (5, J, Joker, A♥) can choose not to follow suit
+    // UNLESS a higher-ranked reneging card has been played in the same trick.
+    // If your only cards of the lead suit are reneging cards that can be held back,
+    // you may play ANY card (trump OR non-trump).
     if (!empty($state['currentTrick'])) {
         $leadCard = $state['currentTrick'][0]['card'];
-        $leadSuit = substr($leadCard, 0, 1);
-        $cardSuit = ($card === 'Joker') ? null : substr($card, 0, 1);
         $trumpSuit = $state['trumpSuit'] ?? null;
         
+        // Handle Joker lead - it's trump, so treat as trump led
+        $leadSuit = ($leadCard === 'Joker') ? $trumpSuit : substr($leadCard, 0, 1);
+        
+        // Handle Ace of Hearts lead when not hearts trump - it's still trump
+        if ($leadCard === 'HA' && $trumpSuit !== 'H') {
+            $leadSuit = $trumpSuit; // Treat as trump led
+        }
+        
+        $cardSuit = ($card === 'Joker') ? null : substr($card, 0, 1);
+        
+        // Check if the card being played is a trump or reneging card
         $isPlayingTrump = ($cardSuit === $trumpSuit) || ($card === 'Joker') || isRenegingCard($card, $trumpSuit);
         
+        // If not following suit and not playing trump, check if we MUST follow suit
         if ($cardSuit !== $leadSuit && !$isPlayingTrump) {
             if (mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $state['currentTrick'])) {
-                throw new Exception("No reneging - you must follow suit!");
+                // Build helpful error message
+                $nonRenegingCards = [];
+                foreach ($playerCards as $c) {
+                    if ($c !== 'Joker' && substr($c, 0, 1) === $leadSuit && !isRenegingCard($c, $trumpSuit)) {
+                        $nonRenegingCards[] = $c;
+                    }
+                }
+                $suitNames = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
+                $suitName = $suitNames[$leadSuit] ?? $leadSuit;
+                throw new Exception("You must follow suit with {$suitName}. You have: " . implode(', ', $nonRenegingCards));
             }
         }
     }
