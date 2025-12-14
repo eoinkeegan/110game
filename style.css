@@ -543,11 +543,40 @@ body.statistics-page #game-details {
     border-top: 2px solid #d4af37;
     padding: 8px 15px;
     z-index: 100;
+    transition: all 0.3s ease;
+}
+
+#scoreboard.collapsed {
+    padding: 4px 15px;
+}
+
+#scoreboard-toggle {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #d4af37;
+    font-size: 0.9em;
+    cursor: pointer;
+    padding: 4px;
+    text-align: center;
+    transition: color 0.2s;
+}
+
+#scoreboard-toggle:hover {
+    color: #e8c848;
+}
+
+#scoreboard-toggle-icon {
+    display: inline-block;
+    transition: transform 0.3s;
+    margin-right: 5px;
 }
 
 #scoreboard-content {
     max-height: 140px; /* Shows header + ~4 rows */
     overflow-y: auto;
+    transition: all 0.3s ease;
 }
 
 .scoreboard-table {

@@ -1394,6 +1394,30 @@ if ($method === 'POST' && $endpoint === 'joinGame') {
         if ($game) {
             $gameId = $game['game_id'];
             
+            // Check if game is already in progress
+            $stmt = $db->prepare("SELECT state FROM game_state WHERE game_id = ?");
+            $stmt->execute([$gameId]);
+            $gameState = $stmt->fetch();
+            
+            if ($gameState) {
+                $state = json_decode($gameState['state'], true);
+                $phase = $state['phase'] ?? null;
+                
+                // If game has a phase, it's already started
+                if ($phase && $phase !== 'waiting') {
+                    throw new Exception("This game is already in progress. You can't join after the game has started.");
+                }
+            }
+            
+            // Check if player name is already taken in this game
+            $stmt = $db->prepare("SELECT player_id FROM players WHERE game_id = ? AND name = ?");
+            $stmt->execute([$gameId, $playerName]);
+            $existingPlayer = $stmt->fetch();
+            
+            if ($existingPlayer) {
+                throw new Exception("A player with this name is already in the game. Please choose a different name.");
+            }
+            
             $stmt = $db->prepare("INSERT INTO players (game_id, name) VALUES (?, ?)");
             $stmt->execute([$gameId, $playerName]);
             $playerId = $db->lastInsertId();

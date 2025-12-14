@@ -394,8 +394,11 @@
         </div>
     </div>
 
-    <!-- Persistent Scoreboard -->
+    <!-- Persistent Scoreboard (collapsible) -->
     <div id="scoreboard" style="display: none;">
+        <button id="scoreboard-toggle" onclick="toggleScoreboard()" title="Toggle scoreboard">
+            <span id="scoreboard-toggle-icon">▼</span> Scores
+        </button>
         <div id="scoreboard-content"></div>
     </div>
 
@@ -742,6 +745,34 @@
             toggle.textContent = buttons.classList.contains('expanded') ? '✕' : '😀';
         }
         
+        // Scoreboard toggle - collapsed by default during kitty phase
+        let scoreboardCollapsed = false;
+        
+        function toggleScoreboard() {
+            const content = document.getElementById('scoreboard-content');
+            const icon = document.getElementById('scoreboard-toggle-icon');
+            const scoreboard = document.getElementById('scoreboard');
+            
+            scoreboardCollapsed = !scoreboardCollapsed;
+            
+            if (scoreboardCollapsed) {
+                content.style.display = 'none';
+                icon.textContent = '▶';
+                scoreboard.classList.add('collapsed');
+            } else {
+                content.style.display = 'block';
+                icon.textContent = '▼';
+                scoreboard.classList.remove('collapsed');
+            }
+        }
+        
+        // Auto-collapse scoreboard during kitty phase to avoid blocking UI
+        function autoCollapseScoreboard(phase) {
+            if (phase === 'kitty' && !scoreboardCollapsed) {
+                toggleScoreboard();
+            }
+        }
+        
         function collapseEmojiPanel() {
             const buttons = document.getElementById('emoji-buttons');
             const toggle = document.querySelector('.emoji-toggle');
@@ -1032,6 +1063,7 @@
             document.getElementById('confirm-selection').style.display = 'block'; // Show confirm button
             document.getElementById('trick-area').style.display = 'none'; // Hide trick area during kitty
             document.getElementById('game-message').innerText = ''; // Clear old messages
+            autoCollapseScoreboard('kitty'); // Collapse scoreboard to avoid blocking Confirm button
         }
 
         // Function to show the trick gameplay phase

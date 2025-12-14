@@ -1,5 +1,57 @@
 ~~need to update the logic around following suit. if you have either a 5 of Trumps, a Jack of Trumps, a Joker or an Ace of Hearts, you do not have to play it, as long as a card of higher value has not been played before yours.~~ ✅ FIXED
 
+---
+
+## 🔧 Refactoring Opportunities (Low Risk)
+
+### Priority 1: Extract Constants (Very Low Risk)
+
+- [ ] **Bid Constants** (~15 min)
+  ```php
+  const VALID_BIDS = [15, 20, 25, 30];
+  const MIN_BID = 15;
+  const MAX_BID = 30;
+  ```
+
+- [ ] **Card Rank Constants** (~30 min)
+  ```php
+  const RANK_FIVE_OF_TRUMP = 1015;
+  const RANK_JACK_OF_TRUMP = 1014;
+  const RANK_JOKER = 1013;
+  const RANK_ACE_OF_HEARTS = 1012;
+  // etc.
+  ```
+
+- [ ] **Suit Constants** (~10 min)
+  ```php
+  const SUITS = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
+  const RED_SUITS = ['H', 'D'];
+  const BLACK_SUITS = ['C', 'S'];
+  ```
+
+### Priority 2: Frontend Constants (Low Risk)
+
+- [ ] **Mirror constants in index.html JavaScript** (~20 min)
+  - Add matching JS constants for card ranks
+  - Reduces duplication between PHP and JS
+
+### Priority 3: Code Organization (Medium Risk)
+
+- [ ] **Extract shared card logic to `includes/card-logic.php`** (~2 hrs)
+  - `isRenegingCard()`, `getCardRankValue()`, `mustFollowSuit()`
+  - Use in both game.php and game-sqlite.php
+
+- [ ] **Extract game phase handlers** (~2 hrs)
+  - `handleBiddingPhase()`, `handleKittyPhase()`, `handleTrickPhase()`
+  - Smaller, more testable functions
+
+### Priority 4: Cleanup (Low Risk)
+
+- [ ] **Remove game.php** (if SQLite version is production)
+- [ ] **Consolidate duplicate validation logic**
+- [ ] **Add PHP type hints to functions**
+
+---
 
 Replace https://your-backend-domain.com with the actual domain of your backend.
 Ensure your backend is configured to support HTTPS.
