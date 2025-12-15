@@ -93,43 +93,45 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
         
-        /* Emoji reactions - collapsible panel */
-        .emoji-panel {
-            position: fixed;
-            bottom: 170px;
+        /* Emoji reactions - header panel */
+        .header-emoji-panel {
+            position: absolute;
             right: 10px;
-            z-index: 200;
+            top: 50%;
+            transform: translateY(-50%);
         }
-        .emoji-toggle {
-            width: 44px;
-            height: 44px;
+        .header-emoji-toggle {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             border: 2px solid #d4af37;
             background: rgba(0,0,0,0.85);
-            font-size: 22px;
+            font-size: 20px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .emoji-toggle:hover {
+        .header-emoji-toggle:hover {
             transform: scale(1.1);
             background: rgba(40,40,40,0.95);
         }
-        .emoji-buttons {
+        .header-emoji-buttons {
             display: none;
             position: absolute;
-            bottom: 50px;
+            top: 100%;
             right: 0;
-            background: rgba(0,0,0,0.9);
-            border-radius: 12px;
+            margin-top: 8px;
+            background: rgba(26, 26, 26, 0.98);
+            border: 1px solid #444;
+            border-radius: 8px;
             padding: 8px;
-            border: 1px solid #333;
-            flex-direction: column;
-            gap: 6px;
+            flex-direction: row;
+            gap: 4px;
+            z-index: 1000;
         }
-        .emoji-buttons.expanded {
+        .header-emoji-buttons.expanded {
             display: flex;
         }
         .emoji-btn {
@@ -302,7 +304,18 @@
         <div onclick="handleHeaderClick()" style="cursor: pointer; display: inline-block;">
             <img src="assets/logo-110.svg" alt="110" style="height: 60px; vertical-align: middle;">
         </div>
-    </div>
+        <!-- Emoji button in header -->
+        <div id="header-emoji-panel" class="header-emoji-panel" style="display: none;">
+            <button class="header-emoji-toggle" onclick="toggleEmojiPanel()" title="Reactions">😀</button>
+            <div id="emoji-buttons" class="header-emoji-buttons">
+                <button class="emoji-btn" onclick="sendReaction('👍'); collapseEmojiPanel();">👍</button>
+                <button class="emoji-btn" onclick="sendReaction('👎'); collapseEmojiPanel();">👎</button>
+                <button class="emoji-btn" onclick="sendReaction('😂'); collapseEmojiPanel();">😂</button>
+                <button class="emoji-btn" onclick="sendReaction('😢'); collapseEmojiPanel();">😢</button>
+                <button class="emoji-btn" onclick="sendReaction('👏'); collapseEmojiPanel();">👏</button>
+                <button class="emoji-btn" onclick="sendReaction('⏰'); collapseEmojiPanel();">⏰</button>
+            </div>
+        </div>
     </div>
     
     <!-- Server Wake-up Screen (shown when server is sleeping) -->
@@ -338,18 +351,6 @@
     </div>
     
     
-    <!-- Emoji reaction panel (collapsible) -->
-    <div id="emoji-panel" class="emoji-panel" style="display: none;">
-        <div id="emoji-buttons" class="emoji-buttons">
-            <button class="emoji-btn" onclick="sendReaction('👍'); collapseEmojiPanel();">👍</button>
-            <button class="emoji-btn" onclick="sendReaction('👎'); collapseEmojiPanel();">👎</button>
-            <button class="emoji-btn" onclick="sendReaction('😂'); collapseEmojiPanel();">😂</button>
-            <button class="emoji-btn" onclick="sendReaction('😮'); collapseEmojiPanel();">😮</button>
-            <button class="emoji-btn" onclick="sendReaction('👏'); collapseEmojiPanel();">👏</button>
-            <button class="emoji-btn" onclick="sendReaction('⏰'); collapseEmojiPanel();">⏰</button>
-        </div>
-        <button class="emoji-toggle" onclick="toggleEmojiPanel()" title="Reactions">😀</button>
-    </div>
     
     <div id="game-container">
         <form id="game-form">
@@ -397,7 +398,7 @@
     <!-- Persistent Scoreboard (collapsible) -->
     <div id="scoreboard" style="display: none;">
         <button id="scoreboard-toggle" onclick="toggleScoreboard()" title="Toggle scoreboard">
-            <span id="scoreboard-toggle-icon">▼</span> Scores
+            <span id="scoreboard-toggle-icon">×</span> <span id="scoreboard-toggle-text">Scores</span>
         </button>
         <div id="scoreboard-content"></div>
     </div>
@@ -518,6 +519,8 @@
         let wsReconnectAttempts = 0;
         const MAX_WS_RECONNECT = 10;
         const WS_RECONNECT_BASE_DELAY = 1000;
+        let selectedCardToPlay = null; // Card selected for playing (before confirm)
+        let selectedCardElement = null; // Element of the selected card
         
         // ============== SOUND EFFECTS ==============
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -730,17 +733,17 @@
         }
         
         function showGameControls() {
-            document.getElementById('emoji-panel').style.display = 'block';
+            document.getElementById('header-emoji-panel').style.display = 'block';
         }
         
         function hideGameControls() {
-            document.getElementById('emoji-panel').style.display = 'none';
+            document.getElementById('header-emoji-panel').style.display = 'none';
             collapseEmojiPanel();
         }
         
         function toggleEmojiPanel() {
             const buttons = document.getElementById('emoji-buttons');
-            const toggle = document.querySelector('.emoji-toggle');
+            const toggle = document.querySelector('.header-emoji-toggle');
             buttons.classList.toggle('expanded');
             toggle.textContent = buttons.classList.contains('expanded') ? '✕' : '😀';
         }
@@ -751,17 +754,20 @@
         function toggleScoreboard() {
             const content = document.getElementById('scoreboard-content');
             const icon = document.getElementById('scoreboard-toggle-icon');
+            const text = document.getElementById('scoreboard-toggle-text');
             const scoreboard = document.getElementById('scoreboard');
             
             scoreboardCollapsed = !scoreboardCollapsed;
             
             if (scoreboardCollapsed) {
                 content.style.display = 'none';
-                icon.textContent = '▶';
+                icon.textContent = '📊';
+                text.textContent = 'Scores';
                 scoreboard.classList.add('collapsed');
             } else {
                 content.style.display = 'block';
-                icon.textContent = '▼';
+                icon.textContent = '×';
+                text.textContent = 'Scores';
                 scoreboard.classList.remove('collapsed');
             }
         }
@@ -775,7 +781,7 @@
         
         function collapseEmojiPanel() {
             const buttons = document.getElementById('emoji-buttons');
-            const toggle = document.querySelector('.emoji-toggle');
+            const toggle = document.querySelector('.header-emoji-toggle');
             buttons.classList.remove('expanded');
             if (toggle) toggle.textContent = '😀';
         }
@@ -1209,7 +1215,7 @@
                     </p>
                     ${!summary.bidMade ? `
                         <p style="color: #ef4444; font-size: 0.9em; margin-bottom: 10px; font-style: italic;">
-                            🕳️ ${bidWinnerName} is going down the hole!
+                            ${bidWinnerName} is going down the hole!
                         </p>
                     ` : ''}
                     ${summary.highestCard ? `
@@ -1920,10 +1926,10 @@
                         cardElement.classList.add('trump-card');
                     }
 
-                // Add event listener to play the card if it's the player's turn
+                // Add event listener to select the card if it's the player's turn
                     if (isMyTurn) {
                         cardElement.classList.add('playable');
-                    cardElement.addEventListener('click', () => playCard(card));
+                    cardElement.addEventListener('click', () => selectCardToPlay(card, cardElement));
                 } else {
                         cardElement.classList.add('disabled');
                 }
@@ -1933,8 +1939,11 @@
                 playerHandsDiv.appendChild(cardsContainer);
             }
             
-            // Hide confirm button during trick play
+            // Clear confirm button (will be shown when card is selected)
             document.getElementById('confirm-selection').innerHTML = '';
+            // Reset card selection state
+            selectedCardToPlay = null;
+            selectedCardElement = null;
         }
 
         // Function to display the Kitty cards and allow trump selection
@@ -2123,8 +2132,9 @@
             trumpButtons.forEach(btn => {
                 if (btn.dataset.suit === suit) {
                     btn.classList.add('selected-trump');
+                    const isRed = (suit === 'Hearts' || suit === 'Diamonds');
                     btn.style.background = '#d4af37';
-                    btn.style.color = '#1a1a1a';
+                    btn.style.color = isRed ? '#b91c1c' : '#1a1a1a'; // Keep red for hearts/diamonds
                     btn.style.border = '3px solid #e8c547';
                     btn.style.transform = 'scale(1.1)';
                     btn.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.5)';
@@ -2186,6 +2196,37 @@
                 .catch(error => {
                     document.getElementById('game-message').innerText = `Error: ${error.message}`;
                 });
+        }
+
+        // Function to select a card for playing (requires confirmation)
+        function selectCardToPlay(card, cardElement) {
+            // Deselect previous card if any
+            if (selectedCardElement) {
+                selectedCardElement.classList.remove('selected');
+            }
+            
+            // Select new card
+            selectedCardToPlay = card;
+            selectedCardElement = cardElement;
+            cardElement.classList.add('selected');
+            
+            // Show confirm button
+            const confirmDiv = document.getElementById('confirm-selection');
+            confirmDiv.innerHTML = `
+                <button id="confirm-play-btn" onclick="confirmPlayCard()" 
+                    style="background: #22c55e; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">
+                    ✓ Play Card
+                </button>
+            `;
+        }
+        
+        // Function to confirm and play the selected card
+        function confirmPlayCard() {
+            if (!selectedCardToPlay) return;
+            playCard(selectedCardToPlay);
+            // Reset selection state
+            selectedCardToPlay = null;
+            selectedCardElement = null;
         }
 
         // Function to play a card
@@ -2583,8 +2624,132 @@
         }
     </script>
     
+    <!-- Rules Modal -->
+    <div id="rules-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10000; overflow-y: auto;">
+        <div style="max-width: 800px; margin: 20px auto; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #d4af37;">🃏 110 Rules</h2>
+                <button onclick="closeRulesModal()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div style="color: #ccc; line-height: 1.6;">
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px;">Overview</h3>
+                <p><strong>110</strong> is an Irish trick-taking card game for 2-8 players. First to <strong>110 points</strong> wins!</p>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">The Deck</h3>
+                <ul>
+                    <li><strong>53 cards</strong>: Standard deck + 1 Joker</li>
+                    <li>The <strong>Ace of Hearts</strong> is always a trump card</li>
+                </ul>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">Game Flow</h3>
+                <ol>
+                    <li><strong>Dealing:</strong> Each player gets 5 cards, 5 go to the Kitty</li>
+                    <li><strong>Bidding:</strong> Bid 15, 20, 25, or 30 for the right to choose trump</li>
+                    <li><strong>Kitty:</strong> Bid winner picks 5 cards from 10, chooses trump. Others can swap cards.</li>
+                    <li><strong>Tricks:</strong> 5 tricks played. Must follow suit or play trump.</li>
+                </ol>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">Trump Ranking (Highest to Lowest)</h3>
+                <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                    <tr style="background: #2a2a2a;">
+                        <td style="padding: 8px; border: 1px solid #444;">1st</td>
+                        <td style="padding: 8px; border: 1px solid #444;"><strong>5 of Trump</strong></td>
+                        <td style="padding: 8px; border: 1px solid #444; color: #888;">Highest card</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #444;">2nd</td>
+                        <td style="padding: 8px; border: 1px solid #444;"><strong>Jack of Trump</strong></td>
+                        <td style="padding: 8px; border: 1px solid #444;"></td>
+                    </tr>
+                    <tr style="background: #2a2a2a;">
+                        <td style="padding: 8px; border: 1px solid #444;">3rd</td>
+                        <td style="padding: 8px; border: 1px solid #444;"><strong>Joker</strong></td>
+                        <td style="padding: 8px; border: 1px solid #444; color: #888;">Always trump</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #444;">4th</td>
+                        <td style="padding: 8px; border: 1px solid #444;"><strong>Ace of Hearts</strong></td>
+                        <td style="padding: 8px; border: 1px solid #444; color: #888;">Always trump</td>
+                    </tr>
+                    <tr style="background: #2a2a2a;">
+                        <td style="padding: 8px; border: 1px solid #444;">5th+</td>
+                        <td style="padding: 8px; border: 1px solid #444;">A, K, Q, numbers...</td>
+                        <td style="padding: 8px; border: 1px solid #444;"></td>
+                    </tr>
+                </table>
+                <p style="font-size: 0.9em; color: #888;">
+                    <strong>Trump numbers:</strong> Red: 10→2 | Black: 2→10
+                </p>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">Non-Trump Ranking</h3>
+                <p><strong style="color: #e74c3c;">Red (♥♦):</strong> K › Q › J › 10 › 9 › 8 › 7 › 6 › 5 › 4 › 3 › 2 › A</p>
+                <p><strong>Black (♠♣):</strong> K › Q › J › A › 2 › 3 › 4 › 5 › 6 › 7 › 8 › 9 › 10</p>
+                <p style="font-size: 0.9em; color: #888;">Note: Aces are LOW in non-trump!</p>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">🔒 Reneging</h3>
+                <p>The <strong>top 4 trumps</strong> (5, J, Joker, A♥) can "renege" - they don't have to follow suit unless a higher reneging card is played in the same trick.</p>
+                <p style="font-size: 0.9em; color: #888;">Example: If you only have the Ace of Hearts when Hearts is led, you can play any card instead!</p>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">📊 Scoring</h3>
+                <ul>
+                    <li>Each trick = <strong>5 points</strong> (25 points per round)</li>
+                    <li>Top trump bonus = <strong>+5 points</strong></li>
+                    <li>Failed bid = <strong>lose your bid amount</strong> (you can go negative!)</li>
+                    <li>If bid winner has ≥85 points, they forfeit the top trump bonus</li>
+                </ul>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">🏆 Winning</h3>
+                <p>First player to reach <strong>110 points</strong> wins!</p>
+                <p style="font-size: 0.9em; color: #888;">If multiple players could reach 110 in the same round, points are counted trick-by-trick - first to hit 110 wins.</p>
+                
+                <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">💡 Strategy Tips</h3>
+                <ul>
+                    <li><strong>Don't overbid!</strong> Going down the hole hurts</li>
+                    <li><strong>5 of Trump</strong> = you control the round</li>
+                    <li><strong>Ace of Hearts</strong> is always valuable (always trump)</li>
+                    <li><strong>Watch for reneging</strong> - high trumps can be saved</li>
+                    <li><strong>Lead trump early</strong> if you won the bid</li>
+                    <li><strong>Card swapping</strong> - ditch weak off-suit cards</li>
+                </ul>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                    <strong style="color: #d4af37;">Quick Reference</strong><br><br>
+                    TRUMP: 5 › J › Joker › A♥ › A › K › Q › numbers<br>
+                    RED TRUMP #s: 10 › 9 › 8 › 7 › 6 › 4 › 3 › 2<br>
+                    BLACK TRUMP #s: 2 › 3 › 4 › 6 › 7 › 8 › 9 › 10<br><br>
+                    NON-TRUMP RED: K › Q › J › 10...2 › A<br>
+                    NON-TRUMP BLACK: K › Q › J › A › 2...10
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openRulesModal() {
+            document.getElementById('rules-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeRulesModal() {
+            document.getElementById('rules-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeRulesModal();
+        });
+        
+        // Close modal on background click
+        document.getElementById('rules-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeRulesModal();
+        });
+    </script>
+    
     <footer id="game-footer" style="position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; text-align: center; background: rgba(26, 26, 26, 0.95); border-top: 1px solid #333;">
-        <a id="stats-link" href="statistics.html" style="color: #d4af37; text-decoration: none; font-size: 0.85em;">📊 Game Statistics</a>
+        <a href="#" onclick="openRulesModal(); return false;" style="color: #d4af37; text-decoration: none; font-size: 0.85em; margin-right: 20px;">📖 Rules</a>
+        <a id="stats-link" href="statistics.html" style="color: #d4af37; text-decoration: none; font-size: 0.85em;">📊 Statistics</a>
     </footer>
 </body>
 </html>
