@@ -1939,11 +1939,32 @@
                 playerHandsDiv.appendChild(cardsContainer);
             }
             
-            // Clear confirm button (will be shown when card is selected)
-            document.getElementById('confirm-selection').innerHTML = '';
-            // Reset card selection state
-            selectedCardToPlay = null;
-            selectedCardElement = null;
+            // Preserve selected card across re-renders
+            // If a card was selected, re-select it after re-render
+            if (selectedCardToPlay && myCards.includes(selectedCardToPlay)) {
+                // Re-show the confirm button
+                const confirmDiv = document.getElementById('confirm-selection');
+                confirmDiv.innerHTML = `
+                    <button id="confirm-play-btn" onclick="confirmPlayCard()" 
+                        style="background: #22c55e; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">
+                        ✓ Play Card
+                    </button>
+                `;
+                // Re-highlight the selected card
+                const cards = cardsContainer.querySelectorAll('.card');
+                cards.forEach(cardEl => {
+                    const cardImg = cardEl.querySelector('img');
+                    if (cardImg && cardImg.alt === selectedCardToPlay) {
+                        cardEl.classList.add('selected');
+                        selectedCardElement = cardEl;
+                    }
+                });
+            } else {
+                // Clear confirm button if no card selected or card no longer in hand
+                document.getElementById('confirm-selection').innerHTML = '';
+                selectedCardToPlay = null;
+                selectedCardElement = null;
+            }
         }
 
         // Function to display the Kitty cards and allow trump selection
