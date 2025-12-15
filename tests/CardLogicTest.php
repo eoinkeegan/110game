@@ -59,11 +59,28 @@ function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
     $highestRenegingPlayed = getHighestRenegingCardPlayed($currentTrick, $trumpSuit);
     
     foreach ($playerCards as $card) {
-        if ($card === 'Joker') continue;
+        $cardSuit = ($card === 'Joker') ? null : substr($card, 0, 1);
+        $cardRank = ($card === 'Joker') ? null : substr($card, 1);
         
-        $cardSuit = substr($card, 0, 1);
+        // Check if this card counts as "following suit"
+        // A card follows the lead suit if:
+        // 1. Its actual suit matches the lead suit, OR
+        // 2. Lead suit is trump AND card is a "permanent trump" (Joker or Ace of Hearts)
+        $cardFollowsLead = false;
         
         if ($cardSuit === $leadSuit) {
+            $cardFollowsLead = true;
+        } elseif ($leadSuit === $trumpSuit) {
+            // Trump was led - check for permanent trumps
+            if ($card === 'Joker') {
+                $cardFollowsLead = true;
+            } elseif ($cardSuit === 'H' && $cardRank === 'A') {
+                // Ace of Hearts is always trump
+                $cardFollowsLead = true;
+            }
+        }
+        
+        if ($cardFollowsLead) {
             if (isRenegingCard($card, $trumpSuit)) {
                 $cardRenegingRank = getRenegingCardRank($card, $trumpSuit);
                 if ($highestRenegingPlayed > $cardRenegingRank) {
@@ -245,6 +262,35 @@ class CardLogicTest extends TestCase
         $result = mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick);
         
         $this->assertFalse($result, '5 of trump can never be forced out');
+    }
+    
+    public function testAceOfHeartsForcedOutWhenTrumpLedWithFive()
+    {
+        // BUG FIX TEST: When 5 of trump is led, Ace of Hearts must be played
+        // because Ace of Hearts is always trump, and 5 (rank 4) > A♥ (rank 1)
+        $playerCards = ['HA', 'D10', 'CQ']; // Ace of Hearts + non-trump cards
+        $leadSuit = 'C'; // Clubs led (trump)
+        $trumpSuit = 'C'; // Clubs is trump
+        // 5 of Clubs led (rank 4)
+        $currentTrick = [['playerId' => 1, 'card' => 'C5']];
+        
+        $result = mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick);
+        
+        $this->assertTrue($result, 'Ace of Hearts must be played when 5 of trump is led (A♥ is forced out)');
+    }
+    
+    public function testJokerForcedOutWhenTrumpLedWithFive()
+    {
+        // Joker is always trump, and should be forced out when 5 of trump is led
+        $playerCards = ['Joker', 'D10', 'HQ']; // Joker + non-trump cards
+        $leadSuit = 'S'; // Spades led (trump)
+        $trumpSuit = 'S'; // Spades is trump
+        // 5 of Spades led (rank 4)
+        $currentTrick = [['playerId' => 1, 'card' => 'S5']];
+        
+        $result = mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick);
+        
+        $this->assertTrue($result, 'Joker must be played when 5 of trump is led (Joker is forced out)');
     }
     
     // =====================================================

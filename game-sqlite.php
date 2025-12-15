@@ -194,13 +194,28 @@ function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
     $highestRenegingPlayed = getHighestRenegingCardPlayed($currentTrick, $trumpSuit);
     
     foreach ($playerCards as $card) {
-        // Joker has no suit - skip
-        if ($card === 'Joker') continue;
+        $cardSuit = ($card === 'Joker') ? null : substr($card, 0, 1);
+        $cardRank = ($card === 'Joker') ? null : substr($card, 1);
         
-        $cardSuit = substr($card, 0, 1);
+        // Check if this card counts as "following suit"
+        // A card follows the lead suit if:
+        // 1. Its actual suit matches the lead suit, OR
+        // 2. Lead suit is trump AND card is a "permanent trump" (Joker or Ace of Hearts)
+        $cardFollowsLead = false;
         
-        // Only check cards that match the lead suit
         if ($cardSuit === $leadSuit) {
+            $cardFollowsLead = true;
+        } elseif ($leadSuit === $trumpSuit) {
+            // Trump was led - check for permanent trumps
+            if ($card === 'Joker') {
+                $cardFollowsLead = true;
+            } elseif ($cardSuit === 'H' && $cardRank === 'A') {
+                // Ace of Hearts is always trump
+                $cardFollowsLead = true;
+            }
+        }
+        
+        if ($cardFollowsLead) {
             if (isRenegingCard($card, $trumpSuit)) {
                 // This is a reneging card (5, J, Joker, A♥)
                 $cardRenegingRank = getRenegingCardRank($card, $trumpSuit);
@@ -814,15 +829,36 @@ function playCard($gameId, $playerId, $card) {
         if ($cardSuit !== $leadSuit && !$isPlayingTrump) {
             if (mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $state['currentTrick'])) {
                 // Build helpful error message
-                $nonRenegingCards = [];
+                $mustPlayCards = [];
+                $highestRenegingPlayed = getHighestRenegingCardPlayed($state['currentTrick'], $trumpSuit);
+                
                 foreach ($playerCards as $c) {
-                    if ($c !== 'Joker' && substr($c, 0, 1) === $leadSuit && !isRenegingCard($c, $trumpSuit)) {
-                        $nonRenegingCards[] = $c;
+                    $cSuit = ($c === 'Joker') ? null : substr($c, 0, 1);
+                    $cRank = ($c === 'Joker') ? null : substr($c, 1);
+                    
+                    // Check if card follows lead
+                    $followsLead = ($cSuit === $leadSuit);
+                    if ($leadSuit === $trumpSuit) {
+                        if ($c === 'Joker') $followsLead = true;
+                        if ($cSuit === 'H' && $cRank === 'A') $followsLead = true;
+                    }
+                    
+                    if ($followsLead) {
+                        if (isRenegingCard($c, $trumpSuit)) {
+                            // Only include if forced out
+                            $rRank = getRenegingCardRank($c, $trumpSuit);
+                            if ($highestRenegingPlayed > $rRank) {
+                                $mustPlayCards[] = $c;
+                            }
+                        } else {
+                            $mustPlayCards[] = $c;
+                        }
                     }
                 }
+                
                 $suitNames = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
                 $suitName = $suitNames[$leadSuit] ?? $leadSuit;
-                throw new Exception("You must follow suit with {$suitName}. You have: " . implode(', ', $nonRenegingCards));
+                throw new Exception("You must follow suit with {$suitName}. You can play: " . implode(', ', $mustPlayCards));
             }
         }
     }
