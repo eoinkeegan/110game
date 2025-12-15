@@ -387,10 +387,16 @@ button {
 }
 
 .card.selected {
-    transform: translateY(-15px);
-    box-shadow: 0 0 20px rgba(22, 163, 74, 0.8), 0 8px 20px rgba(0, 0, 0, 0.3);
-    outline: 3px solid var(--btn-success);
-    outline-offset: -3px;
+    transform: translateY(-20px) scale(1.08);
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.9), 0 0 60px rgba(34, 197, 94, 0.5), 0 12px 25px rgba(0, 0, 0, 0.4);
+    outline: 4px solid #22c55e;
+    outline-offset: -4px;
+    animation: selectedPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.9), 0 0 60px rgba(34, 197, 94, 0.5), 0 12px 25px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(34, 197, 94, 1), 0 0 80px rgba(34, 197, 94, 0.7), 0 12px 25px rgba(0, 0, 0, 0.4); }
 }
 
 .card.selectable {
@@ -554,15 +560,16 @@ body.statistics-page #game-details {
 }
 
 #scoreboard-toggle {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     width: 100%;
     background: transparent;
     border: none;
     color: #d4af37;
     font-size: 0.9em;
     cursor: pointer;
-    padding: 4px;
-    text-align: center;
+    padding: 4px 8px;
     transition: color 0.2s;
 }
 
@@ -571,9 +578,13 @@ body.statistics-page #game-details {
 }
 
 #scoreboard-toggle-icon {
-    display: inline-block;
-    transition: transform 0.3s;
-    margin-right: 5px;
+    font-size: 1.1em;
+    line-height: 1;
+    opacity: 0.8;
+}
+
+#scoreboard-toggle:hover #scoreboard-toggle-icon {
+    opacity: 1;
 }
 
 #scoreboard-content {
@@ -727,7 +738,7 @@ body.statistics-page #game-details {
     
     .card.playable:hover,
     .card.selected {
-        transform: translateY(-6px);
+        transform: translateY(-10px) scale(1.05);
     }
     
     .card.selectable:hover {

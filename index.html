@@ -398,7 +398,7 @@
     <!-- Persistent Scoreboard (collapsible) -->
     <div id="scoreboard" style="display: none;">
         <button id="scoreboard-toggle" onclick="toggleScoreboard()" title="Toggle scoreboard">
-            <span id="scoreboard-toggle-icon">×</span> <span id="scoreboard-toggle-text">Scores</span>
+            <span id="scoreboard-toggle-text">Scores</span> <span id="scoreboard-toggle-icon">×</span>
         </button>
         <div id="scoreboard-content"></div>
     </div>
@@ -1961,7 +1961,7 @@
                 });
             } else {
                 // Clear confirm button if no card selected or card no longer in hand
-                document.getElementById('confirm-selection').innerHTML = '';
+            document.getElementById('confirm-selection').innerHTML = '';
                 selectedCardToPlay = null;
                 selectedCardElement = null;
             }
