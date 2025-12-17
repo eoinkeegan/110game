@@ -93,45 +93,43 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
         
-        /* Emoji reactions - header panel */
-        .header-emoji-panel {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
+        /* Emoji reactions - bottom right panel */
+        .emoji-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 200;
         }
-        .header-emoji-toggle {
-            width: 40px;
-            height: 40px;
+        .emoji-toggle {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             border: 2px solid #d4af37;
             background: rgba(0,0,0,0.85);
-            font-size: 20px;
+            font-size: 24px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .header-emoji-toggle:hover {
+        .emoji-toggle:hover {
             transform: scale(1.1);
             background: rgba(40,40,40,0.95);
         }
-        .header-emoji-buttons {
+        .emoji-buttons {
             display: none;
             position: absolute;
-            top: 100%;
+            bottom: 60px;
             right: 0;
-            margin-top: 8px;
             background: rgba(26, 26, 26, 0.98);
             border: 1px solid #444;
             border-radius: 8px;
             padding: 8px;
-            flex-direction: row;
-            gap: 4px;
-            z-index: 1000;
+            flex-direction: column;
+            gap: 6px;
         }
-        .header-emoji-buttons.expanded {
+        .emoji-buttons.expanded {
             display: flex;
         }
         .emoji-btn {
@@ -307,19 +305,6 @@
                 <div style="font-size: 0.65em; letter-spacing: 2px; color: #888; text-transform: uppercase;">Hanley Rules</div>
             </div>
         </a>
-        
-        <!-- Emoji button (shown during game) -->
-        <div id="header-emoji-panel" class="header-emoji-panel" style="display: none;">
-            <button class="header-emoji-toggle" onclick="toggleEmojiPanel()" title="Reactions">😀</button>
-            <div id="emoji-buttons" class="header-emoji-buttons">
-                <button class="emoji-btn" onclick="sendReaction('👍'); collapseEmojiPanel();">👍</button>
-                <button class="emoji-btn" onclick="sendReaction('👎'); collapseEmojiPanel();">👎</button>
-                <button class="emoji-btn" onclick="sendReaction('😂'); collapseEmojiPanel();">😂</button>
-                <button class="emoji-btn" onclick="sendReaction('😢'); collapseEmojiPanel();">😢</button>
-                <button class="emoji-btn" onclick="sendReaction('👏'); collapseEmojiPanel();">👏</button>
-                <button class="emoji-btn" onclick="sendReaction('⏰'); collapseEmojiPanel();">⏰</button>
-            </div>
-        </div>
         
         <!-- Burger menu -->
         <nav class="burger-menu" id="burger-menu">
@@ -751,17 +736,17 @@
         }
         
         function showGameControls() {
-            document.getElementById('header-emoji-panel').style.display = 'block';
+            document.getElementById('emoji-panel').style.display = 'block';
         }
         
         function hideGameControls() {
-            document.getElementById('header-emoji-panel').style.display = 'none';
+            document.getElementById('emoji-panel').style.display = 'none';
             collapseEmojiPanel();
         }
         
         function toggleEmojiPanel() {
             const buttons = document.getElementById('emoji-buttons');
-            const toggle = document.querySelector('.header-emoji-toggle');
+            const toggle = document.querySelector('.emoji-toggle');
             buttons.classList.toggle('expanded');
             toggle.textContent = buttons.classList.contains('expanded') ? '✕' : '😀';
         }
@@ -812,7 +797,7 @@
         
         function collapseEmojiPanel() {
             const buttons = document.getElementById('emoji-buttons');
-            const toggle = document.querySelector('.header-emoji-toggle');
+            const toggle = document.querySelector('.emoji-toggle');
             buttons.classList.remove('expanded');
             if (toggle) toggle.textContent = '😀';
         }
@@ -2799,6 +2784,20 @@
         });
     </script>
     
-    <!-- Footer removed - navigation now in burger menu -->
+    <!-- Emoji panel (bottom right, shown during game) -->
+    <div id="emoji-panel" class="emoji-panel" style="display: none;">
+        <div id="emoji-buttons" class="emoji-buttons">
+            <button class="emoji-btn" onclick="sendReaction('👍'); collapseEmojiPanel();">👍</button>
+            <button class="emoji-btn" onclick="sendReaction('👎'); collapseEmojiPanel();">👎</button>
+            <button class="emoji-btn" onclick="sendReaction('😂'); collapseEmojiPanel();">😂</button>
+            <button class="emoji-btn" onclick="sendReaction('😢'); collapseEmojiPanel();">😢</button>
+            <button class="emoji-btn" onclick="sendReaction('👏'); collapseEmojiPanel();">👏</button>
+            <button class="emoji-btn" onclick="sendReaction('⏰'); collapseEmojiPanel();">⏰</button>
+        </div>
+        <button class="emoji-toggle" onclick="toggleEmojiPanel()" title="Reactions">😀</button>
+    </div>
+
+    <!-- Hidden footer placeholder (JS references it) -->
+    <div id="game-footer" style="display: none;"></div>
 </body>
 </html>
