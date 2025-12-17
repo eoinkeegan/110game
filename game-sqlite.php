@@ -175,23 +175,22 @@ function getRenegingCardRank($card, $trumpSuit) {
     return 0;
 }
 
-// Function to get the highest reneging card rank played in the current trick
-function getHighestRenegingCardPlayed($currentTrick, $trumpSuit) {
-    $highestRank = 0;
-    foreach ($currentTrick as $playedCard) {
-        $rank = getRenegingCardRank($playedCard['card'], $trumpSuit);
-        if ($rank > $highestRank) {
-            $highestRank = $rank;
-        }
+// Function to get the reneging card rank of the LEAD card (first card in trick)
+// Reneging cards are only forced out if a HIGHER reneging card LEADS the trick
+function getLeadRenegingCardRank($currentTrick, $trumpSuit) {
+    if (empty($currentTrick)) {
+        return 0;
     }
-    return $highestRank;
+    // Only check the first card (the lead)
+    $leadCard = $currentTrick[0]['card'];
+    return getRenegingCardRank($leadCard, $trumpSuit);
 }
 
 // Function to check if player must follow suit
 // Returns TRUE if player has non-reneging cards of lead suit, or reneging cards that are forced out
 // Returns FALSE if player can play any card (no lead suit cards, or only reneging cards that can be held back)
 function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
-    $highestRenegingPlayed = getHighestRenegingCardPlayed($currentTrick, $trumpSuit);
+    $leadRenegingRank = getLeadRenegingCardRank($currentTrick, $trumpSuit);
     
     foreach ($playerCards as $card) {
         $cardSuit = ($card === 'Joker') ? null : substr($card, 0, 1);
@@ -219,13 +218,13 @@ function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
             if (isRenegingCard($card, $trumpSuit)) {
                 // This is a reneging card (5, J, Joker, A♥)
                 $cardRenegingRank = getRenegingCardRank($card, $trumpSuit);
-                // Reneging card is FORCED OUT only if a HIGHER reneging card was played
+                // Reneging card is FORCED OUT only if a HIGHER reneging card LEADS the trick
                 // Rank 4 = 5 of trump (highest, can never be forced)
-                // Rank 3 = J of trump (forced by 5)
-                // Rank 2 = Joker (forced by 5 or J)
-                // Rank 1 = A♥ (forced by 5, J, or Joker)
-                if ($highestRenegingPlayed > $cardRenegingRank) {
-                    return true; // Must play this card - it's been forced out
+                // Rank 3 = J of trump (forced if 5 leads)
+                // Rank 2 = Joker (forced if 5 or J leads)
+                // Rank 1 = A♥ (forced if 5, J, or Joker leads)
+                if ($leadRenegingRank > $cardRenegingRank) {
+                    return true; // Must play this card - it's been forced out by the lead
                 }
                 // Otherwise, this reneging card can be held back - continue checking
             } else {
@@ -830,7 +829,7 @@ function playCard($gameId, $playerId, $card) {
             if (mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $state['currentTrick'])) {
                 // Build helpful error message
                 $mustPlayCards = [];
-                $highestRenegingPlayed = getHighestRenegingCardPlayed($state['currentTrick'], $trumpSuit);
+                $leadRenegingRank = getLeadRenegingCardRank($state['currentTrick'], $trumpSuit);
                 
                 foreach ($playerCards as $c) {
                     $cSuit = ($c === 'Joker') ? null : substr($c, 0, 1);
@@ -845,9 +844,9 @@ function playCard($gameId, $playerId, $card) {
                     
                     if ($followsLead) {
                         if (isRenegingCard($c, $trumpSuit)) {
-                            // Only include if forced out
+                            // Only include if forced out by lead card
                             $rRank = getRenegingCardRank($c, $trumpSuit);
-                            if ($highestRenegingPlayed > $rRank) {
+                            if ($leadRenegingRank > $rRank) {
                                 $mustPlayCards[] = $c;
                             }
                         } else {

@@ -97,9 +97,9 @@ The **top 4 trump cards** have a special privilege called **reneging** - they do
 | Card | Rank | Can Renege When... |
 |------|------|-------------------|
 | 5 of Trump | 4 | Always - can never be forced out |
-| Jack of Trump | 3 | Unless 5 of Trump was played |
-| Joker | 2 | Unless 5 or Jack was played |
-| Ace of Hearts | 1 | Unless 5, Jack, or Joker was played |
+| Jack of Trump | 3 | Unless 5 of Trump **leads** |
+| Joker | 2 | Unless 5 or Jack **leads** |
+| Ace of Hearts | 1 | Unless 5, Jack, or Joker **leads** |
 
 ### When You Can Renege
 
@@ -113,20 +113,26 @@ The key is: if your ONLY cards of the lead suit are reneging cards that can be h
 
 ### When Reneging is Blocked
 
-A reneging card is **forced out** when a higher-ranked reneging card is played in the same trick:
+A reneging card is **forced out** only when a higher-ranked reneging card **leads** the trick:
 
 **Example:** 
-- Spades are trump, Clubs are led
+- Spades are trump
+- Player 1 **leads** with 5 of Spades (rank 4)
 - You have the Jack of Spades (rank 3) in your hand
-- Someone plays the 5 of Spades (rank 4) on this trick
-- You **must** play your Jack of Spades (it's been forced out)
+- You **must** play your Jack of Spades (it's been forced out by the lead)
+
+**Counter-example:**
+- Spades are trump
+- Player 1 leads with King of Spades (not a reneging card)
+- Player 2 plays 5 of Spades
+- You have Jack of Spades - you can **still renege** because the 5 didn't lead!
 
 ### Complete Example
 
 - Spades are trump, Hearts are led with King of Hearts
 - You have: Ace of Hearts (reneging), Queen of Clubs
 - **You can**: Play Ace of Hearts, play a Spade (trump), OR play Queen of Clubs
-- The Ace of Hearts cannot be forced out by the King of Hearts (King is not a reneging card)
+- The Ace of Hearts cannot be forced out by the King (King is not a reneging card, and it led)
 
 ---
 

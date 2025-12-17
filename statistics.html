@@ -3,56 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>110 Game Statistics</title>
-    <link rel="stylesheet" href="style.css?v=59">
+    <title>110 - Statistics</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        .stats-header {
-            text-align: center;
-            padding: 30px 20px;
+        .page-content {
+            padding: 20px;
+            padding-bottom: 40px;
         }
-        .stats-header h1 {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 36px;
-            color: #d4af37;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            margin: 0 0 10px 0;
-        }
-        .stats-header a {
-            color: #ccc;
-            text-decoration: none;
-        }
-        .stats-header a:hover {
-            color: #d4af37;
-        }
-        .stats-container {
+        
+        .content-container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
         }
+        
+        .content-container > h1 {
+            text-align: center;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+        
         .stats-section {
             background: rgba(0, 0, 0, 0.3);
-            padding: 25px;
-            border-radius: 15px;
+            padding: 20px 25px;
+            border-radius: 12px;
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
+        
         .stats-section h2 {
             color: #d4af37;
             margin-top: 0;
+            margin-bottom: 15px;
             border-bottom: 1px solid rgba(212, 175, 55, 0.3);
             padding-bottom: 10px;
+            font-size: 1.3em;
         }
+        
         .stats-section p {
             margin: 10px 0;
             color: #f0f0f0;
+            line-height: 1.6;
         }
+        
         .game-list {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
+        
         .game-item {
             padding: 15px;
             background: rgba(255, 255, 255, 0.1);
@@ -62,10 +64,12 @@
             transition: all 0.2s;
             border-left: 3px solid #d4af37;
         }
+        
         .game-item:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateX(5px);
         }
+        
         #game-message {
             display: none;
             text-align: center;
@@ -75,39 +79,95 @@
             border-radius: 8px;
             background: rgba(220, 38, 38, 0.2);
         }
+        
         .status-completed {
             color: #22c55e;
         }
+        
         .status-progress {
             color: #eab308;
         }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #d4af37;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+        }
     </style>
 </head>
-<body class="statistics-page">
-    <div class="stats-header">
-        <h1>📊 110 Game Statistics</h1>
-        <a href="index.html">← Back to Game</a>
-    </div>
+<body>
+    <header class="site-header">
+        <a href="index.html" class="logo">
+            <img src="assets/logo-110.svg" alt="110">
+        </a>
+        <nav class="burger-menu" id="burger-menu">
+            <button class="burger-btn" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html">🎮 Play Game</a>
+                <a href="rules.html">📖 Rules</a>
+                <a href="statistics.html" class="active">📊 Statistics</a>
+            </div>
+        </nav>
+    </header>
 
-    <div class="stats-container">
-        <div id="game-details" class="stats-section">
-            <h2>Game Details</h2>
-            <p>Select a game below to see round-by-round details.</p>
-        </div>
+    <main class="page-content">
+        <div class="content-container">
+            <h1>📊 Game Statistics</h1>
 
-        <div id="game-history" class="stats-section">
-            <h2>Game History</h2>
-            <p>Loading...</p>
-        </div>
+            <div id="overall-stats" class="stats-section">
+                <h2>Overall Statistics</h2>
+                <p>Loading...</p>
+            </div>
 
-        <div id="overall-stats" class="stats-section">
-            <h2>Overall Statistics</h2>
-            <p>Loading...</p>
+            <div id="game-history" class="stats-section">
+                <h2>Game History</h2>
+                <p>Loading...</p>
+            </div>
+
+            <div id="game-details" class="stats-section" style="display: none;">
+                <h2>Game Details</h2>
+                <p>Select a game above to see round-by-round details.</p>
+            </div>
         </div>
-    </div>
+    </main>
 
     <div id="game-message"></div>
 
-    <script src="statistics.js?v=2"></script>
+    <script>
+        function toggleMenu() {
+            document.getElementById('burger-menu').classList.toggle('open');
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('burger-menu');
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+    </script>
+    <script src="statistics.js"></script>
 </body>
 </html>

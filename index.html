@@ -300,11 +300,12 @@
     </style>
 </head>
 <body>
-    <div class="game-title">
-        <div onclick="handleHeaderClick()" style="cursor: pointer; display: inline-block;">
-            <img src="assets/logo-110.svg" alt="110" style="height: 60px; vertical-align: middle;">
-        </div>
-        <!-- Emoji button in header -->
+    <header class="site-header">
+        <a href="index.html" class="logo" onclick="handleHeaderClick(); return false;">
+            <img src="assets/logo-110.svg" alt="110" style="height: 50px;">
+        </a>
+        
+        <!-- Emoji button (shown during game) -->
         <div id="header-emoji-panel" class="header-emoji-panel" style="display: none;">
             <button class="header-emoji-toggle" onclick="toggleEmojiPanel()" title="Reactions">😀</button>
             <div id="emoji-buttons" class="header-emoji-buttons">
@@ -316,7 +317,21 @@
                 <button class="emoji-btn" onclick="sendReaction('⏰'); collapseEmojiPanel();">⏰</button>
             </div>
         </div>
-    </div>
+        
+        <!-- Burger menu -->
+        <nav class="burger-menu" id="burger-menu">
+            <button class="burger-btn" onclick="toggleBurgerMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html" class="active">🎮 Play Game</a>
+                <a href="rules.html">📖 Rules</a>
+                <a href="statistics.html">📊 Statistics</a>
+            </div>
+        </nav>
+    </header>
     
     <!-- Server Wake-up Screen (shown when server is sleeping) -->
     <div id="server-status-screen" class="server-status-screen">
@@ -747,6 +762,19 @@
             buttons.classList.toggle('expanded');
             toggle.textContent = buttons.classList.contains('expanded') ? '✕' : '😀';
         }
+        
+        // Burger menu toggle
+        function toggleBurgerMenu() {
+            document.getElementById('burger-menu').classList.toggle('open');
+        }
+        
+        // Close burger menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('burger-menu');
+            if (menu && !menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
         
         // Scoreboard toggle - collapsed by default during kitty phase
         let scoreboardCollapsed = false;
@@ -2709,8 +2737,8 @@
                 <p style="font-size: 0.9em; color: #888;">Note: Aces are LOW in non-trump!</p>
                 
                 <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">🔒 Reneging</h3>
-                <p>The <strong>top 4 trumps</strong> (5, J, Joker, A♥) can "renege" - they don't have to follow suit unless a higher reneging card is played in the same trick.</p>
-                <p style="font-size: 0.9em; color: #888;">Example: If you only have the Ace of Hearts when Hearts is led, you can play any card instead!</p>
+                <p>The <strong>top 4 trumps</strong> (5, J, Joker, A♥) can "renege" - they don't have to follow suit unless a higher reneging card <strong>leads</strong> the trick.</p>
+                <p style="font-size: 0.9em; color: #888;">Example: If 5 of trump leads and you have the Jack of trump, you must play it. But if King leads, you can hold back your Jack!</p>
                 
                 <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">📊 Scoring</h3>
                 <ul>
@@ -2768,9 +2796,6 @@
         });
     </script>
     
-    <footer id="game-footer" style="position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; text-align: center; background: rgba(26, 26, 26, 0.95); border-top: 1px solid #333;">
-        <a href="#" onclick="openRulesModal(); return false;" style="color: #d4af37; text-decoration: none; font-size: 0.85em; margin-right: 20px;">📖 Rules</a>
-        <a id="stats-link" href="statistics.html" style="color: #d4af37; text-decoration: none; font-size: 0.85em;">📊 Statistics</a>
-    </footer>
+    <!-- Footer removed - navigation now in burger menu -->
 </body>
 </html>

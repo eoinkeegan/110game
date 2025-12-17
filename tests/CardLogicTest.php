@@ -44,19 +44,17 @@ function getRenegingCardRank($card, $trumpSuit) {
     return 0;
 }
 
-function getHighestRenegingCardPlayed($currentTrick, $trumpSuit) {
-    $highestRank = 0;
-    foreach ($currentTrick as $playedCard) {
-        $rank = getRenegingCardRank($playedCard['card'], $trumpSuit);
-        if ($rank > $highestRank) {
-            $highestRank = $rank;
-        }
+// Get the reneging rank of the LEAD card only (first card in trick)
+function getLeadRenegingCardRank($currentTrick, $trumpSuit) {
+    if (empty($currentTrick)) {
+        return 0;
     }
-    return $highestRank;
+    $leadCard = $currentTrick[0]['card'];
+    return getRenegingCardRank($leadCard, $trumpSuit);
 }
 
 function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
-    $highestRenegingPlayed = getHighestRenegingCardPlayed($currentTrick, $trumpSuit);
+    $leadRenegingRank = getLeadRenegingCardRank($currentTrick, $trumpSuit);
     
     foreach ($playerCards as $card) {
         $cardSuit = ($card === 'Joker') ? null : substr($card, 0, 1);
@@ -83,7 +81,8 @@ function mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick) {
         if ($cardFollowsLead) {
             if (isRenegingCard($card, $trumpSuit)) {
                 $cardRenegingRank = getRenegingCardRank($card, $trumpSuit);
-                if ($highestRenegingPlayed > $cardRenegingRank) {
+                // Only forced out if higher reneging card LEADS
+                if ($leadRenegingRank > $cardRenegingRank) {
                     return true;
                 }
             } else {
@@ -266,31 +265,51 @@ class CardLogicTest extends TestCase
     
     public function testAceOfHeartsForcedOutWhenTrumpLedWithFive()
     {
-        // BUG FIX TEST: When 5 of trump is led, Ace of Hearts must be played
+        // BUG FIX TEST: When 5 of trump LEADS, Ace of Hearts must be played
         // because Ace of Hearts is always trump, and 5 (rank 4) > A♥ (rank 1)
         $playerCards = ['HA', 'D10', 'CQ']; // Ace of Hearts + non-trump cards
         $leadSuit = 'C'; // Clubs led (trump)
         $trumpSuit = 'C'; // Clubs is trump
-        // 5 of Clubs led (rank 4)
+        // 5 of Clubs LEADS (rank 4)
         $currentTrick = [['playerId' => 1, 'card' => 'C5']];
         
         $result = mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick);
         
-        $this->assertTrue($result, 'Ace of Hearts must be played when 5 of trump is led (A♥ is forced out)');
+        $this->assertTrue($result, 'Ace of Hearts must be played when 5 of trump LEADS (A♥ is forced out)');
     }
     
     public function testJokerForcedOutWhenTrumpLedWithFive()
     {
-        // Joker is always trump, and should be forced out when 5 of trump is led
+        // Joker is always trump, and should be forced out when 5 of trump LEADS
         $playerCards = ['Joker', 'D10', 'HQ']; // Joker + non-trump cards
         $leadSuit = 'S'; // Spades led (trump)
         $trumpSuit = 'S'; // Spades is trump
-        // 5 of Spades led (rank 4)
+        // 5 of Spades LEADS (rank 4)
         $currentTrick = [['playerId' => 1, 'card' => 'S5']];
         
         $result = mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick);
         
-        $this->assertTrue($result, 'Joker must be played when 5 of trump is led (Joker is forced out)');
+        $this->assertTrue($result, 'Joker must be played when 5 of trump LEADS (Joker is forced out)');
+    }
+    
+    public function testRenegingNotForcedWhenHigherPlayedAfterLead()
+    {
+        // KEY RULE: Reneging cards are only forced by LEAD, not by subsequent plays
+        // Player 1 leads with King of Spades (not reneging)
+        // Player 2 plays 5 of Spades (reneging, but didn't lead)
+        // Player 3 (us) has Jack of Spades - should NOT be forced out!
+        $playerCards = ['SJ', 'D10', 'HQ']; // Jack of trump + non-trump cards
+        $leadSuit = 'S'; // Spades led (trump)
+        $trumpSuit = 'S'; // Spades is trump
+        $currentTrick = [
+            ['playerId' => 1, 'card' => 'SK'],  // King LEADS (not reneging)
+            ['playerId' => 2, 'card' => 'S5']   // 5 played after (reneging, but didn't lead)
+        ];
+        
+        $result = mustFollowSuit($playerCards, $leadSuit, $trumpSuit, $currentTrick);
+        
+        // Jack should NOT be forced - only the LEAD card matters, and King is not a reneging card
+        $this->assertFalse($result, 'Jack should NOT be forced out when 5 plays AFTER a non-reneging lead');
     }
     
     // =====================================================
