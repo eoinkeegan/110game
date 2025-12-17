@@ -9,7 +9,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 100%) !important;
+            min-height: 100vh !important;
+            color: #f0f0f0 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .site-header {
+            display: flex !important;
+            visibility: visible !important;
+        }
+        
         .page-content {
+            display: block !important;
+            visibility: visible !important;
             padding: 20px;
             padding-bottom: 40px;
         }
@@ -17,6 +32,8 @@
         .content-container {
             max-width: 800px;
             margin: 0 auto;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .content-container > h1 {
@@ -32,6 +49,13 @@
             border-radius: 12px;
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Override global hiding of stats elements */
+        #overall-stats,
+        #game-history,
+        #game-details {
+            display: block !important;
         }
         
         .stats-section h2 {
@@ -171,6 +195,7 @@
             }
         });
     </script>
+    <script src="app-config.js"></script>
     <script src="statistics.js"></script>
 </body>
 </html>

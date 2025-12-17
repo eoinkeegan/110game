@@ -401,7 +401,7 @@
     <!-- Persistent Scoreboard (collapsible) -->
     <div id="scoreboard" style="display: none;">
         <button id="scoreboard-toggle" onclick="toggleScoreboard()" title="Toggle scoreboard">
-            <span id="scoreboard-toggle-text">Scores</span> <span id="scoreboard-toggle-icon">×</span>
+            <span id="scoreboard-toggle-text">📊 Scores</span> <span id="scoreboard-toggle-icon">×</span>
         </button>
         <div id="scoreboard-content"></div>
     </div>
@@ -777,13 +777,13 @@
             
             if (scoreboardCollapsed) {
                 content.style.display = 'none';
-                icon.textContent = '📊';
-                text.textContent = 'Scores';
+                icon.textContent = '+';
+                text.textContent = '📊 Scores';
                 scoreboard.classList.add('collapsed');
             } else {
                 content.style.display = 'block';
                 icon.textContent = '×';
-                text.textContent = 'Scores';
+                text.textContent = '📊 Scores';
                 scoreboard.classList.remove('collapsed');
             }
         }

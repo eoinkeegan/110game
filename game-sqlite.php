@@ -1887,6 +1887,180 @@ if ($method === 'GET' && $endpoint === 'getGameHistory') {
     exit;
 }
 
+// Get game details for statistics page
+if ($method === 'GET' && $endpoint === 'getGameDetails') {
+    try {
+        $gameId = isset($_GET['gameId']) ? intval($_GET['gameId']) : 0;
+        
+        if ($gameId <= 0) {
+            echo json_encode(['error' => 'Invalid game ID']);
+            exit;
+        }
+        
+        // Get game state
+        $stmt = $db->prepare("SELECT state FROM game_state WHERE game_id = ?");
+        $stmt->execute([$gameId]);
+        $row = $stmt->fetch();
+        
+        if (!$row) {
+            echo json_encode(['error' => 'Game not found']);
+            exit;
+        }
+        
+        $state = json_decode($row['state'], true);
+        
+        // Get player names
+        $stmt = $db->prepare("SELECT player_id, name FROM players WHERE game_id = ?");
+        $stmt->execute([$gameId]);
+        $playerNames = [];
+        while ($player = $stmt->fetch()) {
+            $playerNames[$player['player_id']] = $player['name'];
+        }
+        
+        // Build rounds info
+        $rounds = [];
+        if (isset($state['roundHistory']) && is_array($state['roundHistory'])) {
+            foreach ($state['roundHistory'] as $index => $round) {
+                $bidWinnerName = isset($round['bidWinner']) && isset($playerNames[$round['bidWinner']]) 
+                    ? $playerNames[$round['bidWinner']] 
+                    : 'Unknown';
+                
+                $rounds[] = [
+                    'roundNumber' => $index + 1,
+                    'bidWinner' => $bidWinnerName,
+                    'bid' => $round['bid'] ?? null,
+                    'trumpSuit' => $round['trumpSuit'] ?? null,
+                    'forcedBid' => $round['forcedBid'] ?? false,
+                    'bidMade' => $round['bidMade'] ?? null,
+                    'bidWinnerPoints' => $round['bidWinnerPoints'] ?? null
+                ];
+            }
+        }
+        
+        // Get winner and final scores
+        $gameWinner = null;
+        $finalScores = $state['scores'] ?? [];
+        
+        if (isset($state['phase']) && $state['phase'] === 'game_over' && isset($state['winner'])) {
+            $gameWinner = $playerNames[$state['winner']] ?? 'Unknown';
+        }
+        
+        echo json_encode([
+            'rounds' => $rounds,
+            'playerNames' => $playerNames,
+            'gameWinner' => $gameWinner,
+            'finalScores' => $finalScores
+        ]);
+        exit;
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// Seed sample data for testing
+if ($method === 'POST' && $endpoint === 'seedSampleData') {
+    try {
+        $gamesCreated = 0;
+        
+        // Create 3 sample completed games
+        for ($g = 1; $g <= 3; $g++) {
+            $code = 'TEST' . str_pad($g, 2, '0', STR_PAD_LEFT);
+            
+            // Check if game already exists
+            $stmt = $db->prepare("SELECT game_id FROM games WHERE code = ?");
+            $stmt->execute([$code]);
+            if ($stmt->fetch()) {
+                continue; // Skip if exists
+            }
+            
+            // Create game
+            $stmt = $db->prepare("INSERT INTO games (code) VALUES (?)");
+            $stmt->execute([$code]);
+            $gameId = $db->lastInsertId();
+            
+            // Add players
+            $playerNames = ['Alice', 'Bob', 'Charlie', 'Diana'];
+            $playerIds = [];
+            foreach ($playerNames as $name) {
+                $stmt = $db->prepare("INSERT INTO players (game_id, name) VALUES (?, ?)");
+                $stmt->execute([$gameId, $name]);
+                $playerIds[] = $db->lastInsertId();
+            }
+            
+            // Create game state with round history
+            $scores = [];
+            $roundHistory = [];
+            $trumpSuits = ['♠', '♥', '♦', '♣'];
+            
+            foreach ($playerIds as $pid) {
+                $scores[$pid] = 0;
+            }
+            
+            // Simulate rounds until someone wins
+            $winner = null;
+            $roundNum = 0;
+            while ($winner === null && $roundNum < 15) {
+                $roundNum++;
+                $bidWinner = $playerIds[array_rand($playerIds)];
+                $bid = rand(15, 30);
+                $trump = $trumpSuits[array_rand($trumpSuits)];
+                $bidMade = rand(0, 1) === 1;
+                $points = $bidMade ? $bid : -$bid;
+                
+                $scores[$bidWinner] += $points;
+                
+                // Give other players some points
+                foreach ($playerIds as $pid) {
+                    if ($pid !== $bidWinner) {
+                        $scores[$pid] += rand(0, 15);
+                    }
+                }
+                
+                $roundHistory[] = [
+                    'bidWinner' => $bidWinner,
+                    'bid' => $bid,
+                    'trumpSuit' => $trump,
+                    'forcedBid' => rand(0, 5) === 0,
+                    'bidMade' => $bidMade,
+                    'bidWinnerPoints' => $points
+                ];
+                
+                // Check for winner
+                foreach ($playerIds as $pid) {
+                    if ($scores[$pid] >= 110) {
+                        $winner = $pid;
+                        break;
+                    }
+                }
+            }
+            
+            $state = [
+                'phase' => 'game_over',
+                'scores' => $scores,
+                'roundHistory' => $roundHistory,
+                'winner' => $winner,
+                'players' => array_combine($playerIds, $playerNames)
+            ];
+            
+            $stmt = $db->prepare("INSERT OR REPLACE INTO game_state (game_id, state) VALUES (?, ?)");
+            $stmt->execute([$gameId, json_encode($state)]);
+            
+            $gamesCreated++;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Sample data seeded successfully',
+            'gamesCreated' => $gamesCreated
+        ]);
+        exit;
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // Default response for unknown endpoints
 echo json_encode(['error' => 'Unknown endpoint']);
 

@@ -665,8 +665,9 @@ body.statistics-page #game-details {
 
 #scoreboard-toggle {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    position: relative;
     width: 100%;
     background: transparent;
     border: none;
@@ -682,6 +683,8 @@ body.statistics-page #game-details {
 }
 
 #scoreboard-toggle-icon {
+    position: absolute;
+    right: 8px;
     font-size: 1.1em;
     line-height: 1;
     opacity: 0.8;

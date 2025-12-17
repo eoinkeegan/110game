@@ -1,3 +1,8 @@
+// Determine API URL based on environment
+const STATS_API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'game-sqlite.php'
+    : (window.APP_CONFIG?.GAME_SERVER_URL ? window.APP_CONFIG.GAME_SERVER_URL + '/game-sqlite.php' : 'game-sqlite.php');
+
 // Utility function to sanitize user inputs
 function sanitizeInput(input) {
     if (input === null || input === undefined) return '';
@@ -17,7 +22,7 @@ function displayErrorMessage(message) {
 
 // Fetch and display overall statistics
 function fetchOverallStatistics() {
-    fetch('game.php?endpoint=getOverallStatistics')
+    fetch(`${STATS_API_URL}?endpoint=getOverallStatistics`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error fetching overall statistics: ${response.statusText}`);
@@ -47,7 +52,7 @@ function fetchOverallStatistics() {
 
 // Fetch and display game history
 function fetchGameHistory() {
-    fetch('game.php?endpoint=getGameHistory')
+    fetch(`${STATS_API_URL}?endpoint=getGameHistory`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error fetching game history: ${response.statusText}`);
@@ -112,7 +117,7 @@ function fetchGameHistory() {
 
 // Fetch and display game details
 function fetchGameDetails(gameId) {
-    fetch(`game.php?endpoint=getGameDetails&gameId=${sanitizeInput(gameId)}`)
+    fetch(`${STATS_API_URL}?endpoint=getGameDetails&gameId=${sanitizeInput(gameId)}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Error fetching game details for Game ID ${gameId}: ${response.statusText}`);
@@ -209,7 +214,7 @@ function seedSampleData() {
     btn.innerText = 'Seeding...';
     msg.innerText = '';
     
-    fetch('game.php?endpoint=seedSampleData', {
+    fetch(`${STATS_API_URL}?endpoint=seedSampleData`, {
         method: 'POST'
     })
         .then(response => response.json())
