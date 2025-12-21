@@ -1075,8 +1075,10 @@ function scoreRound($gameId) {
     
     $highestCardPlayer = $state['highestCardPlayer'] ?? null;
     $highestCard = $state['highestCardInRound'] ?? null;
-    $bidWinnerStartScore = $state['finalScores'][$bidWinner] ?? 0;
-    $bidWinnerForfeitsBonus = ($bidWinnerStartScore >= 85) && ($highestCardPlayer == $bidWinner);
+    
+    // Any player who starts at >=85 forfeits the top trump bonus
+    $highestCardPlayerStartScore = $state['finalScores'][$highestCardPlayer] ?? 0;
+    $highestCardPlayerForfeitsBonus = ($highestCardPlayerStartScore >= 85);
     
     $bidWinnerTricks = 0;
     foreach ($state['scores'] as $pid => $tricks) {
@@ -1088,8 +1090,8 @@ function scoreRound($gameId) {
     $bidWinnerTrickPoints = $bidWinnerTricks * 5;
     
     $bidWinnerHasBonus = false;
-    if ($highestCardPlayer !== null && !$bidWinnerForfeitsBonus) {
-        $bidWinnerHasBonus = ($highestCardPlayer == $bidWinner);
+    if ($highestCardPlayer !== null && $highestCardPlayer == $bidWinner && !$highestCardPlayerForfeitsBonus) {
+        $bidWinnerHasBonus = true;
     }
     $bidWinnerBonus = $bidWinnerHasBonus ? 5 : 0;
     
@@ -1106,10 +1108,8 @@ function scoreRound($gameId) {
         }
         $trickPoints = $tricksWon * 5;
         
-        $hasBonus = ($highestCardPlayer !== null && $playerId == $highestCardPlayer);
-        if ($playerId == $bidWinner && $bidWinnerForfeitsBonus) {
-            $hasBonus = false;
-        }
+        // Only the highestCardPlayer gets the bonus, and only if they started <85
+        $hasBonus = ($highestCardPlayer !== null && $playerId == $highestCardPlayer && !$highestCardPlayerForfeitsBonus);
         
         if (!isset($state['finalScores'][$playerId])) {
             $state['finalScores'][$playerId] = 0;
@@ -1152,7 +1152,7 @@ function scoreRound($gameId) {
         'highestCardPlayer' => $highestCardPlayer,
         'highestCard' => $highestCard,
         'highestCardTrick' => $state['highestCardTrick'] ?? 5,
-        'bidWinnerForfeitsBonus' => $bidWinnerForfeitsBonus
+        'highestCardPlayerForfeitsBonus' => $highestCardPlayerForfeitsBonus
     ];
     
     foreach ($playerIds as $pid) {
@@ -1165,10 +1165,8 @@ function scoreRound($gameId) {
         }
         $trickPoints = $tricksWon * 5;
         
-        $hasBonus = ($highestCardPlayer !== null && $pid == $highestCardPlayer);
-        if ($pid == $bidWinner && $bidWinnerForfeitsBonus) {
-            $hasBonus = false;
-        }
+        // Only the highestCardPlayer gets the bonus, and only if they started <85
+        $hasBonus = ($highestCardPlayer !== null && $pid == $highestCardPlayer && !$highestCardPlayerForfeitsBonus);
         
         if ($pid == $bidWinner) {
             $totalPoints = $trickPoints + ($hasBonus ? 5 : 0);
@@ -1248,8 +1246,9 @@ function determineGameWinner($gameId) {
         $previousScores[$pid] = ($state['finalScores'][$pid] ?? 0) - $roundPoints;
     }
     
-    $bidWinnerStartScore = $previousScores[$bidWinner] ?? 0;
-    $bidWinnerForfeitsBonus = ($bidWinnerStartScore >= 85) && ($highestCardPlayer == $bidWinner);
+    // Any player who starts at >=85 forfeits the top trump bonus
+    $highestCardPlayerStartScore = $previousScores[$highestCardPlayer] ?? 0;
+    $highestCardPlayerForfeitsBonus = ($highestCardPlayerStartScore >= 85);
     
     $firstTo110 = [];
     $runningScores = $previousScores;
@@ -1268,10 +1267,8 @@ function determineGameWinner($gameId) {
         foreach ($playerIds as $pid) {
             $scoreWithBonus = $runningScores[$pid];
             
-            $canGetBonus = ($pid == $highestCardPlayer && $trickNum >= $highestCardTrick);
-            if ($pid == $bidWinner && $bidWinnerForfeitsBonus) {
-                $canGetBonus = false;
-            }
+            // Only the highestCardPlayer can get the bonus, and only if they started <85
+            $canGetBonus = ($pid == $highestCardPlayer && $trickNum >= $highestCardTrick && !$highestCardPlayerForfeitsBonus);
             
             if ($canGetBonus) {
                 $scoreWithBonus += 5;
