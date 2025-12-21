@@ -128,7 +128,28 @@ function sanitizeInput($input, $type = 'string') {
 
 // Function to generate a unique 6-character alphanumeric game code
 function generateGameCode() {
-    return substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 6);
+    // Word-based game codes for easier verbal sharing
+    // Using two words: adjective + noun (e.g., "happy-apple")
+    $adjectives = [
+        'happy', 'brave', 'quick', 'calm', 'wild',
+        'bold', 'cool', 'warm', 'soft', 'loud',
+        'tiny', 'huge', 'fast', 'slow', 'tall',
+        'red', 'blue', 'gold', 'dark', 'pink',
+        'crisp', 'fresh', 'neat', 'nice', 'kind'
+    ];
+    
+    $nouns = [
+        'apple', 'mango', 'lemon', 'peach', 'grape',
+        'melon', 'berry', 'plum', 'cherry', 'olive',
+        'tiger', 'eagle', 'panda', 'whale', 'fox',
+        'river', 'storm', 'cloud', 'flame', 'frost',
+        'crown', 'sword', 'shield', 'arrow', 'tower'
+    ];
+    
+    $adj = $adjectives[array_rand($adjectives)];
+    $noun = $nouns[array_rand($nouns)];
+    
+    return $adj . '-' . $noun;
 }
 
 // Function to generate a standard 52-card deck plus a joker
@@ -1279,6 +1300,11 @@ function determineGameWinner($gameId) {
 function continueToNextRound($gameId) {
     global $db;
     
+    // IMPORTANT: Check for game winner BEFORE clearing round data!
+    // determineGameWinner needs roundSummary and trickWinners to calculate who reached 110
+    determineGameWinner($gameId);
+    
+    // Check if game is over after determineGameWinner
     $stmt = $db->prepare("SELECT state FROM game_state WHERE game_id = ?");
     $stmt->execute([$gameId]);
     $gameState = $stmt->fetch();
@@ -1289,12 +1315,18 @@ function continueToNextRound($gameId) {
     
     $state = json_decode($gameState['state'], true);
     
+    // If there's a winner, don't start a new round
+    if (isset($state['gameWinner'])) {
+        return;
+    }
+    
     // Get player IDs from database (more reliable than state)
     $stmt = $db->prepare("SELECT player_id FROM players WHERE game_id = ?");
     $stmt->execute([$gameId]);
     $players = $stmt->fetchAll();
     $playerIds = array_column($players, 'player_id');
     
+    // Now safe to clear round data since we've already checked for winner
     $state['scores'] = [];
     $state['tricksPlayed'] = 0;
     $state['currentTrick'] = [];
@@ -1311,17 +1343,7 @@ function continueToNextRound($gameId) {
     $stmt = $db->prepare("UPDATE game_state SET state = ? WHERE game_id = ?");
     $stmt->execute([$updatedState, $gameId]);
 
-    determineGameWinner($gameId);
-    
-    // Fetch the updated state after determineGameWinner
-    $stmt = $db->prepare("SELECT state FROM game_state WHERE game_id = ?");
-    $stmt->execute([$gameId]);
-    $updatedGameState = $stmt->fetch();
-    $updatedState = json_decode($updatedGameState['state'], true);
-    
-    if (!isset($updatedState['gameWinner'])) {
-        startNewRound($gameId);
-    }
+    startNewRound($gameId);
 }
 
 // Function to start a new round

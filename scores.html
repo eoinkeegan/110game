@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>110 - Scores</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        .scores-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .scores-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .scores-table th,
+        .scores-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        
+        .scores-table th {
+            background: rgba(212, 175, 55, 0.1);
+            color: #d4af37;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+        }
+        
+        .scores-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .scores-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .scores-table .is-me {
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .scores-table .score-cell {
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .scores-table .rank-cell {
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .scores-table .first-place td:first-child::before {
+            content: "🥇 ";
+        }
+        
+        .scores-table .second-place td:first-child::before {
+            content: "🥈 ";
+        }
+        
+        .scores-table .third-place td:first-child::before {
+            content: "🥉 ";
+        }
+        
+        .game-info {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .game-info .round-info {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .game-info .game-code {
+            font-family: monospace;
+            background: rgba(212, 175, 55, 0.2);
+            padding: 4px 12px;
+            border-radius: 4px;
+            color: #d4af37;
+        }
+        
+        .no-game-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        
+        .no-game-message h2 {
+            color: #d4af37;
+            margin-bottom: 15px;
+        }
+        
+        .return-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #d4af37;
+            color: #1a1a1a;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .return-btn:hover {
+            background: #e8c44a;
+        }
+        
+        .dealer-tag {
+            font-size: 0.75em;
+            color: #888;
+            margin-left: 8px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d4af37;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="index.html" class="logo" style="text-decoration: none;">
+            <div style="text-align: center; line-height: 1.1;">
+                <span style="font-family: system-ui, sans-serif; font-size: 2em; font-weight: 600; color: #d4af37;">110</span>
+                <div style="font-size: 0.65em; letter-spacing: 2px; color: #888; text-transform: uppercase;">Hanley Rules</div>
+            </div>
+        </a>
+        <nav class="burger-menu" id="burger-menu">
+            <button class="burger-btn" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html">🎮 Play Game</a>
+                <a href="scores.html" class="active">📊 Scores</a>
+                <a href="rules.html">📖 Rules</a>
+                <a href="statistics.html">📈 Statistics</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-content">
+        <div class="scores-container">
+            <h1>📊 Game Scores</h1>
+            
+            <div id="scores-content">
+                <div class="loading">Loading scores</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app-config.js"></script>
+    <script>
+        function toggleMenu() {
+            document.getElementById('burger-menu').classList.toggle('open');
+        }
+        
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('burger-menu');
+            if (menu && !menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+        
+        // Get game session from storage
+        function getSession() {
+            try {
+                const session = sessionStorage.getItem('gameSession');
+                return session ? JSON.parse(session) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        // Fetch and display scores
+        async function loadScores() {
+            const content = document.getElementById('scores-content');
+            const session = getSession();
+            
+            if (!session || !session.gameId) {
+                content.innerHTML = `
+                    <div class="no-game-message">
+                        <h2>No Active Game</h2>
+                        <p>You're not currently in a game.</p>
+                        <p>Join or create a game to see scores here.</p>
+                        <a href="index.html" class="return-btn">🎮 Play Game</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const API_URL = window.APP_CONFIG?.GAME_SERVER_URL || 'game-sqlite.php';
+                const response = await fetch(`${API_URL}?endpoint=getGameState&gameId=${session.gameId}&playerId=${session.playerId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    content.innerHTML = `
+                        <div class="no-game-message">
+                            <h2>Game Not Found</h2>
+                            <p>${data.error}</p>
+                            <a href="index.html" class="return-btn">🎮 Start New Game</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                displayScores(data, session);
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="no-game-message">
+                        <h2>Connection Error</h2>
+                        <p>Could not connect to game server.</p>
+                        <a href="index.html" class="return-btn">🎮 Return to Game</a>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayScores(data, session) {
+            const content = document.getElementById('scores-content');
+            const playerNames = data.playerNames || {};
+            const scores = data.finalScores || {};
+            const players = Object.keys(playerNames);
+            const roundNumber = data.roundNumber || 1;
+            const phase = data.phase || 'bidding';
+            const gameCode = data.gameCode || session.gameCode || '???';
+            
+            // Sort players by score
+            const sortedPlayers = players.sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
+            
+            // Get dealer info
+            const dealerIndex = data.dealer ?? 0;
+            const currentDealerId = players[dealerIndex];
+            
+            // Build game info bar
+            let html = `
+                <div class="game-info">
+                    <div>
+                        <span class="round-info">Round ${roundNumber}</span>
+                        <span style="color: #444; margin: 0 8px;">•</span>
+                        <span class="round-info" style="text-transform: capitalize;">${phase.replace('_', ' ')}</span>
+                    </div>
+                    <div class="game-code">${gameCode}</div>
+                </div>
+                
+                <table class="scores-table">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th style="text-align: right;">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            sortedPlayers.forEach((pid, index) => {
+                const name = playerNames[pid] || `Player ${pid}`;
+                const score = scores[pid] || 0;
+                const isMe = pid == session.playerId;
+                const isDealer = pid == currentDealerId;
+                
+                let rankClass = '';
+                if (index === 0) rankClass = 'first-place';
+                else if (index === 1) rankClass = 'second-place';
+                else if (index === 2) rankClass = 'third-place';
+                
+                html += `
+                    <tr class="${isMe ? 'is-me' : ''} ${rankClass}">
+                        <td>
+                            ${name}
+                            ${isMe ? '<span style="color: #d4af37; margin-left: 5px;">⭐</span>' : ''}
+                            ${isDealer ? '<span class="dealer-tag">(dealer)</span>' : ''}
+                        </td>
+                        <td class="score-cell">${score}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="index.html" class="return-btn">← Return to Game</a>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        // Auto-refresh scores every 5 seconds
+        let refreshInterval;
+        
+        function startAutoRefresh() {
+            loadScores();
+            refreshInterval = setInterval(loadScores, 5000);
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+        
+        // Start on page load
+        document.addEventListener('DOMContentLoaded', startAutoRefresh);
+        
+        // Stop when page is hidden
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>
+

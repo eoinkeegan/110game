@@ -315,8 +315,9 @@
             </button>
             <div class="nav-menu">
                 <a href="index.html" class="active">🎮 Play Game</a>
+                <a href="scores.html">📊 Scores</a>
                 <a href="rules.html">📖 Rules</a>
-                <a href="statistics.html">📊 Statistics</a>
+                <a href="statistics.html">📈 Statistics</a>
             </div>
         </nav>
     </header>
@@ -358,7 +359,7 @@
     <div id="game-container">
         <form id="game-form">
             <input type="text" id="player-name" placeholder="Enter your name" required>
-            <input type="text" id="game-code" placeholder="Enter game code (to join)">
+            <input type="text" id="game-code" placeholder="e.g. happy-apple" style="text-transform: lowercase;">
             <button type="button" id="create-game">Create Game</button>
             <button type="button" id="join-game">Join Game</button>
         </form>
@@ -398,13 +399,8 @@
         </div>
     </div>
 
-    <!-- Persistent Scoreboard (collapsible) -->
-    <div id="scoreboard" style="display: none;">
-        <button id="scoreboard-toggle" onclick="toggleScoreboard()" title="Toggle scoreboard">
-            <span id="scoreboard-toggle-text">📊 Scores</span> <span id="scoreboard-toggle-icon">×</span>
-        </button>
-        <div id="scoreboard-content"></div>
-    </div>
+    <!-- Scoreboard moved to scores.html page (accessible via menu) -->
+    <div id="scoreboard" style="display: none;"></div>
 
     <script src="app-config.js"></script>
     <script>
@@ -524,6 +520,10 @@
         const WS_RECONNECT_BASE_DELAY = 1000;
         let selectedCardToPlay = null; // Card selected for playing (before confirm)
         let selectedCardElement = null; // Element of the selected card
+        let lastErrorTime = 0; // Timestamp of last error message (to prevent overwriting)
+        const ERROR_DISPLAY_DURATION = 5000; // Show errors for 5 seconds before allowing overwrite
+        let lastAcknowledgedRound = 0; // Track which round summary the player has acknowledged
+        let pendingRoundSummary = null; // Store round summary data when transitioning
         
         // ============== SOUND EFFECTS ==============
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -711,7 +711,9 @@
             setTimeout(() => reactionDiv.remove(), 2500);
         }
         
-        let lastReactionTimestamp = 0;
+        // Initialize to current time so old reactions from before page load are ignored
+        let lastReactionTimestamp = Date.now() / 1000; // Convert to seconds to match server timestamp
+        
         function checkForReactions(data) {
             if (data.lastReaction && data.lastReaction.timestamp > lastReactionTimestamp) {
                 lastReactionTimestamp = data.lastReaction.timestamp;
@@ -764,36 +766,9 @@
             }
         });
         
-        // Scoreboard toggle - collapsed by default during kitty phase
-        let scoreboardCollapsed = false;
-        
-        function toggleScoreboard() {
-            const content = document.getElementById('scoreboard-content');
-            const icon = document.getElementById('scoreboard-toggle-icon');
-            const text = document.getElementById('scoreboard-toggle-text');
-            const scoreboard = document.getElementById('scoreboard');
-            
-            scoreboardCollapsed = !scoreboardCollapsed;
-            
-            if (scoreboardCollapsed) {
-                content.style.display = 'none';
-                icon.textContent = '+';
-                text.textContent = '📊 Scores';
-                scoreboard.classList.add('collapsed');
-            } else {
-                content.style.display = 'block';
-                icon.textContent = '×';
-                text.textContent = '📊 Scores';
-                scoreboard.classList.remove('collapsed');
-            }
-        }
-        
-        // Auto-collapse scoreboard during kitty phase to avoid blocking UI
-        function autoCollapseScoreboard(phase) {
-            if (phase === 'kitty' && !scoreboardCollapsed) {
-                toggleScoreboard();
-            }
-        }
+        // Scoreboard moved to separate page - keep stubs for compatibility
+        function toggleScoreboard() { }
+        function autoCollapseScoreboard(phase) { }
         
         function collapseEmojiPanel() {
             const buttons = document.getElementById('emoji-buttons');
@@ -973,15 +948,42 @@
                         showGameOver(data);
                     } else if (phase === 'round_summary') {
                         // Show round summary - prioritize this over trick display
-                        showRoundSummary(data);
+                        const currentRound = data.roundNumber || 1;
+                        pendingRoundSummary = data; // Store for later if needed
+                        showRoundSummary(data, currentRound);
                     } else if (phase === 'bidding') {
+                        const currentRound = data.roundNumber || 1;
+                        
+                        // Check if player needs to see previous round's summary first
+                        if (currentRound > 1 && lastAcknowledgedRound < currentRound - 1 && data.roundHistory && data.roundHistory.length > 0) {
+                            // Player hasn't acknowledged the previous round's summary - show it
+                            const lastRoundData = data.roundHistory[data.roundHistory.length - 1];
+                            showPreviousRoundSummary(lastRoundData, data.playerNames, currentRound - 1);
+                        } else {
                         showBiddingPhase();
                         updateBiddingArea(data);
+                            // Reset swap state when in bidding phase (preparing for next kitty phase)
+                            hasCompletedSwap = false;
+                            swapSelectedCards = [];
+                        }
                     } else if (phase === 'kitty') {
                         showKittyPhase();
                         // Only update kitty UI if we haven't started selecting yet
                         // This prevents the UI from resetting during card selection
                         const isHighestBidder = data.highestBidder == currentPlayerId;
+                        
+                        // Reset swap state for non-bid winners if server says they haven't swapped
+                        // This fixes the bug where hasCompletedSwap gets stuck as true
+                        if (!isHighestBidder) {
+                            const swapComplete = data.swapComplete || [];
+                            const serverSaysSwapped = swapComplete.includes(currentPlayerId) || 
+                                                       swapComplete.includes(parseInt(currentPlayerId)) ||
+                                                       swapComplete.includes(String(currentPlayerId));
+                            if (!serverSaysSwapped) {
+                                hasCompletedSwap = false;
+                            }
+                        }
+                        
                         if (!isHighestBidder || selectedCards.length === 0) {
                             updateKittySelection(data);
                         }
@@ -1001,67 +1003,8 @@
                 });
         }
         
-        // Function to update the persistent scoreboard
-        function updateScoreboard(data) {
-            const scoreboard = document.getElementById('scoreboard');
-            const content = document.getElementById('scoreboard-content');
-            
-            // Only show scoreboard if we have scores
-            const scores = data.finalScores || {};
-            const playerNames = data.playerNames || {};
-            
-            if (Object.keys(scores).length === 0 && Object.keys(playerNames).length === 0) {
-                scoreboard.style.display = 'none';
-                return;
-            }
-            
-            scoreboard.style.display = 'block';
-            
-            // Build scoreboard as a table - players already in join order from backend
-            const players = Object.keys(playerNames).length > 0 ? Object.keys(playerNames) : Object.keys(scores);
-            
-            // Get the current dealer and next dealer
-            const dealerIndex = data.dealer ?? 0;
-            const currentDealerId = players[dealerIndex];
-            const nextDealerIndex = (dealerIndex + 1) % players.length;
-            const nextDealerId = players[nextDealerIndex];
-            
-            let html = `
-                <table class="scoreboard-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            players.forEach(pid => {
-                const name = playerNames[pid] || `Player ${pid}`;
-                const score = scores[pid] || 0;
-                const isMe = pid == currentPlayerId;
-                const isCurrentDealer = pid == currentDealerId;
-                const isNextDealer = pid == nextDealerId;
-                
-                let dealerTag = '';
-                if (isCurrentDealer) {
-                    dealerTag = ' <span style="color: #888; font-size: 0.85em;">(current dealer)</span>';
-                } else if (isNextDealer) {
-                    dealerTag = ' <span style="color: #888; font-size: 0.85em;">(next deal)</span>';
-                }
-                
-                html += `
-                    <tr class="${isMe ? 'is-me' : ''}">
-                        <td>${isMe ? '⭐ ' : ''}${name}${dealerTag}</td>
-                        <td class="score-cell">${score}</td>
-                    </tr>
-                `;
-            });
-            
-            html += '</tbody></table>';
-            content.innerHTML = html;
-        }
+        // Scoreboard moved to separate page - stub for compatibility
+        function updateScoreboard(data) { }
 
         // Function to show the bidding phase
         function showBiddingPhase() {
@@ -1174,6 +1117,8 @@
             clearSession();
             gameId = null;
             currentPlayerId = null;
+            lastAcknowledgedRound = 0;
+            pendingRoundSummary = null;
             stopPolling();
             hideGameControls();
             
@@ -1197,7 +1142,7 @@
         }
         
         // Function to display round summary
-        function showRoundSummary(data) {
+        function showRoundSummary(data, roundNumber) {
             document.getElementById('game-container').style.display = 'none'; // Hide form/lobby
             document.getElementById('bidding-area').style.display = 'none';
             document.getElementById('gameplay-container').style.display = 'block';
@@ -1223,9 +1168,66 @@
                 (playerNames[summary.highestCardPlayer] || `Player ${summary.highestCardPlayer}`) : null;
             
             // Build the summary HTML
+            let summaryHtml = buildRoundSummaryHtml(summary, playerNames, roundNumber, bidWinnerName, highestCardPlayerName, false);
+            
+            document.getElementById('player-hands').innerHTML = summaryHtml;
+            document.getElementById('trick-area').innerHTML = '';
+            document.getElementById('trump-selection').innerHTML = '';
+            document.getElementById('confirm-selection').innerHTML = '';
+            document.getElementById('game-message').innerHTML = '';
+            
+            // Add click handler for continue button
+            document.getElementById('continue-round-btn').addEventListener('click', () => {
+                lastAcknowledgedRound = roundNumber;
+                continueToNextRound();
+            });
+        }
+        
+        // Function to show previous round summary (when game already moved to next round)
+        function showPreviousRoundSummary(roundData, playerNames, roundNumber) {
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('bidding-area').style.display = 'none';
+            document.getElementById('gameplay-container').style.display = 'block';
+            document.getElementById('game-footer').style.display = 'none';
+            document.getElementById('trump-selection').style.display = 'none';
+            document.getElementById('trick-area').style.display = 'none';
+            document.getElementById('confirm-selection').style.display = 'none';
+            document.getElementById('player-hands').style.display = 'block';
+            showGameControls();
+            
+            const bidWinnerName = playerNames[roundData.bidWinner] || `Player ${roundData.bidWinner}`;
+            
+            // Build summary from roundHistory data
+            const summary = {
+                bidWinner: roundData.bidWinner,
+                bid: roundData.bid,
+                bidMade: roundData.bidMade,
+                roundPoints: roundData.roundPoints || {},
+                tricksWon: roundData.scores || {},
+                totalScores: roundData.finalScores || {}
+            };
+            
+            let summaryHtml = buildRoundSummaryHtml(summary, playerNames, roundNumber, bidWinnerName, null, true);
+            
+            document.getElementById('player-hands').innerHTML = summaryHtml;
+            document.getElementById('trick-area').innerHTML = '';
+            document.getElementById('trump-selection').innerHTML = '';
+            document.getElementById('confirm-selection').innerHTML = '';
+            document.getElementById('game-message').innerHTML = '<p style="color: #888; font-size: 0.85em;">Next round has started. Take your time reviewing.</p>';
+            
+            // Add click handler - just acknowledge locally, don't call backend
+            document.getElementById('continue-round-btn').addEventListener('click', () => {
+                lastAcknowledgedRound = roundNumber;
+                fetchGameState(); // Will now show bidding phase
+            });
+        }
+        
+        // Helper function to build round summary HTML
+        function buildRoundSummaryHtml(summary, playerNames, roundNumber, bidWinnerName, highestCardPlayerName, isPrevious) {
             let summaryHtml = `
                 <div style="text-align: center; padding: 10px;">
-                    <h2 style="font-size: 1.2em; margin-bottom: 8px;">📊 Round ${data.roundNumber || 1} Complete</h2>
+                    <h2 style="font-size: 1.2em; margin-bottom: 8px;">📊 Round ${roundNumber} Complete</h2>
+                    ${isPrevious ? '<p style="color: #fbbf24; font-size: 0.8em; margin-bottom: 8px;">⏸️ Catch up - others have moved on</p>' : ''}
                     <p style="color: #888; margin-bottom: 8px; font-size: 0.9em;">
                         ${bidWinnerName} bid ${summary.bid} and ${summary.bidMade ? '✅ made it!' : '❌ failed!'}
                     </p>
@@ -1234,7 +1236,7 @@
                             ${bidWinnerName} is going down the hole!
                         </p>
                     ` : ''}
-                    ${summary.highestCard ? `
+                    ${summary.highestCard && highestCardPlayerName ? `
                         <p style="color: ${summary.bidWinnerForfeitsBonus ? '#888' : '#d4af37'}; margin-bottom: 10px; font-size: 0.85em;">
                             🃏 Top trump: <strong>${formatCardText(summary.highestCard)}</strong> by ${highestCardPlayerName}
                             ${summary.bidWinnerForfeitsBonus ? '<span style="color: #ef4444;">(forfeited - score ≥85)</span>' : '(+5)'}
@@ -1246,7 +1248,6 @@
                             <tr style="border-bottom: 2px solid #d4af37;">
                                 <th style="padding: 6px; text-align: left;">Player</th>
                                 <th style="padding: 6px; text-align: center;">Tricks</th>
-                                <th style="padding: 6px; text-align: center;">Bonus</th>
                                 <th style="padding: 6px; text-align: center;">Pts</th>
                                 <th style="padding: 6px; text-align: right;">Total</th>
                             </tr>
@@ -1259,9 +1260,6 @@
                 const roundPoints = summary.roundPoints[pid] || 0;
                 const totalScore = summary.totalScores[pid] || 0;
                 const isBidWinner = pid == summary.bidWinner;
-                const playedHighest = pid == summary.highestCardPlayer;
-                const forfeited = isBidWinner && summary.bidWinnerForfeitsBonus;
-                const hasBonus = playedHighest && !forfeited;
                 const pointsColor = roundPoints >= 0 ? '#22c55e' : '#ef4444';
                 
                 summaryHtml += `
@@ -1270,9 +1268,6 @@
                             ${isBidWinner ? '🎯' : ''}${name}
                         </td>
                         <td style="padding: 6px; text-align: center;">${tricks}</td>
-                        <td style="padding: 6px; text-align: center; color: ${forfeited ? '#ef4444' : '#d4af37'};">
-                            ${playedHighest ? (forfeited ? '✗' : '+5') : '-'}
-                        </td>
                         <td style="padding: 6px; text-align: center; color: ${pointsColor};">
                             ${roundPoints >= 0 ? '+' : ''}${roundPoints}
                         </td>
@@ -1285,18 +1280,11 @@
                     </table>
                     
                     <button id="continue-round-btn" style="margin-top: 15px; padding: 10px 25px; font-size: 1em; background: #d4af37; color: #1a1a1a; border: none; border-radius: 6px; cursor: pointer;">
-                        Continue →
+                        ${isPrevious ? 'Continue to Round ' + (roundNumber + 1) + ' →' : 'Continue →'}
                     </button>
                 </div>`;
             
-            document.getElementById('player-hands').innerHTML = summaryHtml;
-            document.getElementById('trick-area').innerHTML = '';
-            document.getElementById('trump-selection').innerHTML = '';
-            document.getElementById('confirm-selection').innerHTML = '';
-            document.getElementById('game-message').innerHTML = '';
-            
-            // Add click handler for continue button
-            document.getElementById('continue-round-btn').addEventListener('click', continueToNextRound);
+            return summaryHtml;
         }
         
         // Function to continue to next round
@@ -1329,6 +1317,22 @@
         function updateBiddingArea(data) {
             const biddingArea = document.getElementById('bidding-area');
             biddingArea.innerHTML = '<h3>Bidding Phase</h3>';
+            
+            // Get dealer info
+            const players = Object.keys(data.playerNames || {});
+            const dealerIndex = data.dealer ?? 0;
+            const dealerId = players[dealerIndex];
+            const dealerName = data.playerNames ? data.playerNames[dealerId] : `Player ${dealerIndex}`;
+            const isDealer = dealerId == currentPlayerId;
+            
+            // Show dealer info
+            const dealerInfo = document.createElement('p');
+            dealerInfo.style.color = '#888';
+            dealerInfo.style.fontSize = '0.9em';
+            dealerInfo.innerHTML = isDealer 
+                ? '🎴 <span style="color: #d4af37;">You are the dealer</span>' 
+                : `🎴 Dealer: ${dealerName}`;
+            biddingArea.appendChild(dealerInfo);
 
             // Display the current bid
             const currentBid = document.createElement('p');
@@ -1955,12 +1959,17 @@
             const isMyTurn = data.currentTurn == currentPlayerId;
             
             if (!isTrickComplete) {
-            // Highlight the current player
+            // Highlight the current player - but don't overwrite recent error messages
                 const turnPlayerName = data.playerNames ? data.playerNames[data.currentTurn] : `Player ${data.currentTurn}`;
+                const timeSinceError = Date.now() - lastErrorTime;
+                
+                // Only update message if no recent error (errors persist for 5 seconds)
+                if (timeSinceError > ERROR_DISPLAY_DURATION) {
                 if (isMyTurn) {
                     gameMessageDiv.innerText = "📢 Your turn - tap a card to play";
             } else {
                     gameMessageDiv.innerText = `📢 Waiting for ${turnPlayerName} to play`;
+                    }
                 }
                 
                 // "Never send a boy to do a man's job" taunt
@@ -2002,6 +2011,7 @@
                 const cardElement = document.createElement('div');
                     cardElement.className = 'card hand-card';
                     cardElement.innerHTML = formatCard(card);
+                    cardElement.dataset.card = card; // Add data attribute for reliable matching
                     
                     const suit = card[0];
                     if (suit === data.trumpSuit) {
@@ -2023,7 +2033,7 @@
             
             // Preserve selected card across re-renders
             // If a card was selected, re-select it after re-render
-            if (selectedCardToPlay && myCards.includes(selectedCardToPlay)) {
+            if (selectedCardToPlay && myCards.includes(selectedCardToPlay) && isMyTurn) {
                 // Re-show the confirm button
                 const confirmDiv = document.getElementById('confirm-selection');
                 confirmDiv.innerHTML = `
@@ -2032,17 +2042,16 @@
                         ✓ Play Card
                     </button>
                 `;
-                // Re-highlight the selected card
+                // Re-highlight the selected card using data-card attribute (more reliable than img.alt)
                 const cards = cardsContainer.querySelectorAll('.card');
                 cards.forEach(cardEl => {
-                    const cardImg = cardEl.querySelector('img');
-                    if (cardImg && cardImg.alt === selectedCardToPlay) {
+                    if (cardEl.dataset.card === selectedCardToPlay) {
                         cardEl.classList.add('selected');
                         selectedCardElement = cardEl;
                     }
                 });
-            } else {
-                // Clear confirm button if no card selected or card no longer in hand
+            } else if (!isMyTurn || !myCards.includes(selectedCardToPlay)) {
+                // Clear selection if not our turn or card no longer in hand
             document.getElementById('confirm-selection').innerHTML = '';
                 selectedCardToPlay = null;
                 selectedCardElement = null;
@@ -2346,11 +2355,12 @@
                 .then(data => {
                     if (data.error) {
                         // Check if it's the reneging error - show without "Error:" prefix
-                        if (data.error.includes('reneging') || data.error.includes('follow suit')) {
-                            document.getElementById('game-message').innerText = `📢 ${data.error}`;
-                            // Don't clear this message - it will persist until next card play
+                        if (data.error.includes('reneging') || data.error.includes('follow suit') || data.error.includes('must play')) {
+                            document.getElementById('game-message').innerHTML = `<span style="color: #ef4444;">⚠️ ${data.error}</span>`;
+                            lastErrorTime = Date.now(); // Prevent polling from overwriting this
                         } else {
                             document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                            lastErrorTime = Date.now();
                         }
                     } else {
                         document.getElementById('game-message').innerText = '';
@@ -2578,8 +2588,8 @@
 
         // Event listener for joining a game
         document.getElementById('join-game').addEventListener('click', function() {
-            const playerName = document.getElementById('player-name').value;
-            const inputGameCode = document.getElementById('game-code').value;
+            const playerName = document.getElementById('player-name').value.trim();
+            const inputGameCode = document.getElementById('game-code').value.trim().toLowerCase();
             if (!playerName || !inputGameCode) {
                 document.getElementById('game-message').innerText = 'Please enter your name and game code.';
                 return;
