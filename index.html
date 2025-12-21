@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>110</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css?v=74">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -356,7 +357,7 @@
     
     
     
-    <div id="game-container">
+    <div id="game-container" style="display: none;">
         <form id="game-form">
             <input type="text" id="player-name" placeholder="Enter your name" required>
             <input type="text" id="game-code" placeholder="e.g. happy-apple" style="text-transform: lowercase;">
@@ -415,7 +416,7 @@
             if (!window.APP_CONFIG?.LAMBDA_URL) {
                 serverReady = true;
                 serverScreen.classList.remove('visible');
-                gameContainer.style.display = 'block';
+                // Don't show game-container here - let window.onload handle it after session check
                 return true;
             }
             
@@ -429,7 +430,7 @@
                 // Lambda confirms EC2 is running - trust it and show game
                 serverReady = true;
                 serverScreen.classList.remove('visible');
-                gameContainer.style.display = 'block';
+                // Don't show game-container here - let window.onload handle it after session check
                 return true;
             }
             
@@ -487,10 +488,13 @@
                 await new Promise(r => setTimeout(r, 1000));
                 
                 document.getElementById('server-status-screen').classList.remove('visible');
-                document.getElementById('game-container').style.display = 'block';
                 
-                // Try to restore session
-                restoreSession();
+                // Try to restore session (this will show the appropriate UI)
+                const restored = await restoreSession();
+                if (!restored) {
+                    document.getElementById('game-container').style.display = 'block';
+                    document.getElementById('game-form').style.display = 'flex';
+                }
             } else {
                 serverIcon.textContent = '⚠️';
                 progressText.textContent = 'Server took too long to start. Please try again.';
@@ -876,7 +880,8 @@
                     biddingArea.appendChild(currentBid);
 
                     const currentBidder = document.createElement('p');
-                    currentBidder.innerText = `Current Bidder: Player ${data.currentBidder}`;
+                    const bidderName = data.playerNames ? data.playerNames[data.currentBidder] : `Player ${data.currentBidder}`;
+                    currentBidder.innerText = `Current Bidder: ${bidderName}`;
                     biddingArea.appendChild(currentBidder);
 
                     // Display valid bid options
@@ -1824,7 +1829,7 @@
                     const isMe = playerId == currentPlayerId;
                     const isWinner = playerId == data.lastTrickWinner;
                     const isBidWinner = playerId == data.highestBidder;
-                    let playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : 'P' + playerId);
+                    let playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : `Player ${playerId}`);
                     
                     // Add star for bid winner
                     if (isBidWinner) {
@@ -1911,7 +1916,7 @@
                     const isMe = pid == currentPlayerId;
                     const isBidWinner = pid == data.highestBidder;
                     const isCurrentTurn = pid == data.currentTurn;
-                    let playerLabel = isMe ? 'You' : (playerNames[pid] || `P${pid}`);
+                    let playerLabel = isMe ? 'You' : (playerNames[pid] || `Player ${pid}`);
                     
                     // Add star for bid winner
                     if (isBidWinner) {
@@ -1955,7 +1960,7 @@
             }
 
             // Only show turn message if not displaying trick complete
-            const isTrickComplete = data.trickComplete && data.lastCompletedTrick && data.lastCompletedTrick.length > 0;
+            // (isTrickComplete already defined above)
             const isMyTurn = data.currentTurn == currentPlayerId;
             
             if (!isTrickComplete) {
@@ -1994,6 +1999,10 @@
                 // Hide the hand div when no cards left
                 playerHandsDiv.style.display = 'none';
                 playerHandsDiv.innerHTML = '';
+                // Clear selection since no cards
+                document.getElementById('confirm-selection').innerHTML = '';
+                selectedCardToPlay = null;
+                selectedCardElement = null;
             } else {
                 playerHandsDiv.style.display = 'block';
                 const sortBtnText = sortCards ? '✓ Sorted' : '🔀 Sort';
@@ -2008,7 +2017,7 @@
                 
                 const displayCards = sortCards ? sortCardsByRank(myCards, data.trumpSuit) : myCards;
                 displayCards.forEach(card => {
-                const cardElement = document.createElement('div');
+                    const cardElement = document.createElement('div');
                     cardElement.className = 'card hand-card';
                     cardElement.innerHTML = formatCard(card);
                     cardElement.dataset.card = card; // Add data attribute for reliable matching
@@ -2018,43 +2027,39 @@
                         cardElement.classList.add('trump-card');
                     }
 
-                // Add event listener to select the card if it's the player's turn
+                    // Add event listener to select the card if it's the player's turn
                     if (isMyTurn) {
                         cardElement.classList.add('playable');
-                    cardElement.addEventListener('click', () => selectCardToPlay(card, cardElement));
-                } else {
+                        cardElement.addEventListener('click', () => selectCardToPlay(card, cardElement));
+                        
+                        // Re-apply selection if this is the previously selected card
+                        if (selectedCardToPlay === card) {
+                            cardElement.classList.add('selected');
+                            selectedCardElement = cardElement;
+                        }
+                    } else {
                         cardElement.classList.add('disabled');
-                }
+                    }
 
                     cardsContainer.appendChild(cardElement);
-            });
-                playerHandsDiv.appendChild(cardsContainer);
-            }
-            
-            // Preserve selected card across re-renders
-            // If a card was selected, re-select it after re-render
-            if (selectedCardToPlay && myCards.includes(selectedCardToPlay) && isMyTurn) {
-                // Re-show the confirm button
-                const confirmDiv = document.getElementById('confirm-selection');
-                confirmDiv.innerHTML = `
-                    <button id="confirm-play-btn" onclick="confirmPlayCard()" 
-                        style="background: #22c55e; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">
-                        ✓ Play Card
-                    </button>
-                `;
-                // Re-highlight the selected card using data-card attribute (more reliable than img.alt)
-                const cards = cardsContainer.querySelectorAll('.card');
-                cards.forEach(cardEl => {
-                    if (cardEl.dataset.card === selectedCardToPlay) {
-                        cardEl.classList.add('selected');
-                        selectedCardElement = cardEl;
-                    }
                 });
-            } else if (!isMyTurn || !myCards.includes(selectedCardToPlay)) {
-                // Clear selection if not our turn or card no longer in hand
-            document.getElementById('confirm-selection').innerHTML = '';
-                selectedCardToPlay = null;
-                selectedCardElement = null;
+                playerHandsDiv.appendChild(cardsContainer);
+                
+                // Preserve confirm button if card is still selected
+                if (selectedCardToPlay && myCards.includes(selectedCardToPlay) && isMyTurn) {
+                    const confirmDiv = document.getElementById('confirm-selection');
+                    confirmDiv.innerHTML = `
+                        <button id="confirm-play-btn" onclick="confirmPlayCard()" 
+                            style="background: #22c55e; color: white; padding: 12px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">
+                            ✓ Play Card
+                        </button>
+                    `;
+                } else if (!isMyTurn || !myCards.includes(selectedCardToPlay)) {
+                    // Clear selection if not our turn or card no longer in hand
+                    document.getElementById('confirm-selection').innerHTML = '';
+                    selectedCardToPlay = null;
+                    selectedCardElement = null;
+                }
             }
         }
 
@@ -2209,15 +2214,8 @@
                 counter.innerHTML = `<span style="font-size: 1em; letter-spacing: 3px;">${dots}</span><br><span style="color: ${color}; font-size: 0.9em;">Selected: ${selectedCards.length}/5 cards</span>`;
             }
             
-            // Update message if both trump and cards are ready
-            if (selectedCards.length === 5 && trumpSuit) {
-                document.getElementById('game-message').innerHTML = `<span style="color: #22c55e; font-size: 1.1em;">✓ Ready - tap Confirm to continue</span>`;
-            } else if (selectedCards.length === 5 && !trumpSuit) {
-                document.getElementById('game-message').innerHTML = `<span style="color: #fbbf24;">✓ 5 cards selected. Now select trump</span>`;
-            } else if (trumpSuit) {
-                const msgTrumpColor = (trumpSuit === 'Hearts' || trumpSuit === 'Diamonds') ? '#dc2626' : '#333';
-                document.getElementById('game-message').innerHTML = `<span style="color: #fbbf24;">✓ Trump: <span style="color: ${msgTrumpColor}; background: #fff; padding: 1px 4px; border-radius: 3px;">${trumpSuit}</span>. Select ${5 - selectedCards.length} more card${5 - selectedCards.length > 1 ? 's' : ''}</span>`;
-            }
+            // Clear message during kitty selection (UI is self-explanatory)
+            document.getElementById('game-message').innerHTML = '';
         }
 
         // Function to select the trump suit
@@ -2260,12 +2258,8 @@
                 indicator.innerHTML = `<span style="color: #d4af37; font-weight: bold;">✓ Trump: <span style="color: ${suitColor}; background: #fff; padding: 2px 6px; border-radius: 4px;">${suitSymbols[suit]} ${suit}</span></span>`;
             }
             
-            // Update message based on whether cards are also selected
-            if (selectedCards.length === 5) {
-                document.getElementById('game-message').innerHTML = `<span style="color: #22c55e; font-size: 1.1em;">✓ Ready - tap Confirm to continue</span>`;
-            } else {
-                document.getElementById('game-message').innerHTML = `<span style="color: #fbbf24;">Select ${5 - selectedCards.length} more card${5 - selectedCards.length > 1 ? 's' : ''} to keep</span>`;
-            }
+            // Clear message during kitty selection (UI is self-explanatory)
+            document.getElementById('game-message').innerHTML = '';
         }
 
         // Function to confirm the selection
@@ -2687,13 +2681,23 @@
                     currentPlayerId = session.currentPlayerId;
                     isGameCreator = session.isGameCreator;
 
-                    // Hide form, show appropriate UI
+                    // Hide form, show lobby initially (fetchGameState will update if game started)
+                    document.getElementById('game-container').style.display = 'block';
                     document.getElementById('game-form').style.display = 'none';
-                    document.getElementById('game-message').innerText = 'Session restored! Rejoining game...';
+                    document.getElementById('lobby-area').style.display = 'block';
+                    document.getElementById('display-game-code').innerText = gameCode;
+                    document.getElementById('game-message').innerText = 'Session restored!';
+                    
+                    // Show start button if creator
+                    if (isGameCreator) {
+                        document.getElementById('start-game').style.display = 'inline-block';
+                    }
 
                     // Fetch current game state to determine what to show
+                    refreshPlayerList();
                     fetchGameState();
                     startPollingGameState();
+                    startLobbyPolling();
 
                     return true;
             } else {
@@ -2724,6 +2728,7 @@
             
             if (!restored) {
                 // No session to restore, show the form
+                document.getElementById('game-container').style.display = 'block';
                 document.getElementById('game-form').style.display = 'flex';
             }
             

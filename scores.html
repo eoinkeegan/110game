@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>110 - Scores</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -204,11 +205,20 @@
             }
         });
         
-        // Get game session from storage
+        // Get game session from storage (matches index.html)
         function getSession() {
             try {
-                const session = sessionStorage.getItem('gameSession');
-                return session ? JSON.parse(session) : null;
+                const session = localStorage.getItem('110game_session');
+                if (session) {
+                    const parsed = JSON.parse(session);
+                    // Map field names to what scores.html expects
+                    return {
+                        gameId: parsed.gameId,
+                        playerId: parsed.currentPlayerId,
+                        gameCode: parsed.gameCode
+                    };
+                }
+                return null;
             } catch (e) {
                 return null;
             }

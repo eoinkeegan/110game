@@ -120,7 +120,15 @@ function sanitizeInput($input, $type = 'string') {
         case 'string':
             return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
         case 'gameCode':
-            return preg_match('/^[A-Z0-9]{6}$/', $input) ? $input : null;
+            // Accept both old format (ABC123) and new word format (happy-apple)
+            $input = strtolower(trim($input));
+            if (preg_match('/^[a-z]+-[a-z]+$/', $input)) {
+                return $input; // New word format
+            }
+            if (preg_match('/^[a-z0-9]{6}$/i', $input)) {
+                return strtoupper($input); // Old format (uppercase)
+            }
+            return null;
         default:
             return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
     }

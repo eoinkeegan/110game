@@ -545,8 +545,8 @@ button {
 }
 
 .waiting-card {
-    width: 60px;
-    height: 84px;
+    width: 70px;
+    aspect-ratio: 5 / 7;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -554,7 +554,7 @@ button {
     font-size: 2em;
     font-weight: bold;
     background: linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%);
-    border: 2px dashed #444;
+    border: 2px dashed #555;
     color: #555;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
@@ -916,7 +916,8 @@ body.statistics-page #game-details {
         gap: 6px !important;
     }
     
-    .played-card {
+    .played-card,
+    .waiting-card {
         width: 50px !important;
         aspect-ratio: 5 / 7 !important;
     }

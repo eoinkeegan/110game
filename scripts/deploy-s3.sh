@@ -36,6 +36,10 @@ aws s3 cp app-config.js $S3_BUCKET/ --cache-control "max-age=3600"
 echo "📊 Uploading statistics.js (1 day cache)..."
 aws s3 cp statistics.js $S3_BUCKET/ --cache-control "max-age=86400"
 
+# Upload favicon (1 week cache)
+echo "🎯 Uploading favicon.svg (1 week cache)..."
+aws s3 cp favicon.svg $S3_BUCKET/ --cache-control "max-age=604800"
+
 # Upload assets with long cache (1 week) - static images
 echo "🖼️  Uploading assets (1 week cache)..."
 aws s3 sync assets/ $S3_BUCKET/assets/ --cache-control "max-age=604800"
