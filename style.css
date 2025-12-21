@@ -544,6 +544,47 @@ button {
     aspect-ratio: 5 / 7;
 }
 
+.waiting-card {
+    width: 60px;
+    height: 84px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    font-weight: bold;
+    background: linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%);
+    border: 2px dashed #444;
+    color: #555;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.player-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.player-slot .player-name {
+    font-size: 0.85em;
+    color: #888;
+    max-width: 80px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-slot .player-name.current-turn {
+    color: #d4af37;
+    font-weight: bold;
+}
+
+.player-slot .player-name.bid-winner {
+    color: #d4af37;
+}
+
 /* Trump selection */
 #trump-selection {
     background: rgba(0, 0, 0, 0.3);

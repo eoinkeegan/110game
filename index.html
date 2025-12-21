@@ -1766,26 +1766,37 @@
 
         // Function to update the trick gameplay area
         function updateTrickGameplay(data) {
-            // Display trump suit and bid info
+            // Display consolidated info bar: Trump | Trick X of 5 | PlayerName went
             const trumpDiv = document.getElementById('trump-selection');
-            const trumpSymbols = { 'H': '♥ Hearts', 'D': '♦ Diamonds', 'C': '♣ Clubs', 'S': '♠ Spades' };
+            const trumpSymbols = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' };
+            const suitNames = { 'H': 'Hearts', 'D': 'Diamonds', 'C': 'Clubs', 'S': 'Spades' };
             // Use white/light colors for black suits on dark background
             const trumpColor = (data.trumpSuit === 'H' || data.trumpSuit === 'D') ? '#ef4444' : '#e5e5e5';
             
             // Get bid winner info
             const bidWinnerName = data.playerNames && data.highestBidder ? data.playerNames[data.highestBidder] : 'Unknown';
-            const bidAmount = data.winningBid || data.currentBid || '?';
             
-            trumpDiv.innerHTML = `<h4>Trump: <span style="color: ${trumpColor}; font-weight: bold;">${trumpSymbols[data.trumpSuit] || data.trumpSuit}</span> · ${bidWinnerName} went ${bidAmount}</h4>`;
+            // Determine trick number: if trick complete, show that trick number; otherwise show next trick
+            const isTrickComplete = data.trickComplete && data.lastCompletedTrick && data.lastCompletedTrick.length > 0;
+            const trickNumber = isTrickComplete ? (data.tricksPlayed || 1) : (data.tricksPlayed || 0) + 1;
             
-            // Display trick winners history
+            // Build info bar: Trump: ♠ Spades | Trick 3 of 5 | Mike went
+            trumpDiv.innerHTML = `
+                <p style="color: #888; margin: 0;">
+                    Trump: <span style="color: ${trumpColor}; font-weight: bold;">${trumpSymbols[data.trumpSuit]} ${suitNames[data.trumpSuit]}</span>
+                    &nbsp;|&nbsp; Trick ${trickNumber} of 5
+                    &nbsp;|&nbsp; ${bidWinnerName} went
+                </p>
+            `;
+            
+            // Display trick winners history below info bar
             if (data.trickWinners && data.trickWinners.length > 0) {
                 const trickHistoryHtml = data.trickWinners.map(tw => {
                     const winnerName = data.playerNames ? data.playerNames[tw.winner] : `Player ${tw.winner}`;
                     const isMe = tw.winner == currentPlayerId;
                     return `<span style="color: ${isMe ? '#d4af37' : '#ccc'};">${tw.trick}. ${isMe ? 'You' : winnerName}</span>`;
                 }).join(' · ');
-                trumpDiv.innerHTML += `<p style="font-size: 0.9em; margin-top: 5px;">Tricks: ${trickHistoryHtml}</p>`;
+                trumpDiv.innerHTML += `<p style="font-size: 0.85em; margin-top: 4px; color: #666;">Tricks: ${trickHistoryHtml}</p>`;
             }
             
             const trickAreaDiv = document.getElementById('trick-area');
@@ -1796,30 +1807,36 @@
                 const winnerName = data.playerNames ? data.playerNames[data.lastTrickWinner] : `Player ${data.lastTrickWinner}`;
                 const isWinnerMe = data.lastTrickWinner == currentPlayerId;
                 
-                trickAreaDiv.innerHTML = `<h3 style="margin-bottom: 10px;">🏆 Trick complete</h3>`;
+                // Clear trick area (info is shown in the top bar)
+                trickAreaDiv.innerHTML = '';
                 
                 const trickCardsDiv = document.createElement('div');
                 trickCardsDiv.className = 'trick-cards';
-                trickCardsDiv.style.display = 'flex';
-                trickCardsDiv.style.justifyContent = 'center';
-                trickCardsDiv.style.gap = '12px';
-                trickCardsDiv.style.flexWrap = 'wrap';
                 
                 data.lastCompletedTrick.forEach(({ playerId, card }) => {
                     const cardWrapper = document.createElement('div');
-                    cardWrapper.style.textAlign = 'center';
+                    cardWrapper.className = 'player-slot';
                     
                     const isMe = playerId == currentPlayerId;
                     const isWinner = playerId == data.lastTrickWinner;
-                    const playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : 'P' + playerId);
+                    const isBidWinner = playerId == data.highestBidder;
+                    let playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : 'P' + playerId);
+                    
+                    // Add star for bid winner
+                    if (isBidWinner) {
+                        playerLabel += ' ★';
+                    }
                     
                     // Player name above card
                     const nameLabel = document.createElement('div');
-                    nameLabel.style.marginBottom = '5px';
-                    nameLabel.style.fontWeight = isWinner ? 'bold' : 'normal';
-                    nameLabel.style.color = isWinner ? '#d4af37' : '#ccc';
-                    nameLabel.style.fontSize = '1.1em';
-                    nameLabel.innerText = isWinner ? `👑 ${playerLabel}` : playerLabel;
+                    nameLabel.className = 'player-name';
+                    if (isBidWinner) {
+                        nameLabel.classList.add('bid-winner');
+                    }
+                    if (isWinner) {
+                        nameLabel.style.fontWeight = 'bold';
+                    }
+                    nameLabel.innerText = playerLabel;
                     cardWrapper.appendChild(nameLabel);
                     
                     // The card
@@ -1838,6 +1855,12 @@
                 });
                 trickAreaDiv.appendChild(trickCardsDiv);
                 
+                // Show winner message
+                const winnerMsg = document.createElement('p');
+                winnerMsg.style.cssText = 'text-align: center; color: #4ade80; margin-top: 15px;';
+                winnerMsg.innerText = `${isWinnerMe ? 'You win' : winnerName + ' wins'} the trick!`;
+                trickAreaDiv.appendChild(winnerMsg);
+                
                 if (isWinnerMe) {
                     gameMessageDiv.innerText = '📢 Tap a card to lead the next trick';
                 } else {
@@ -1847,41 +1870,84 @@
                 // Don't auto-advance - winner must play their next card
                 // But still show the winner's hand so they can play
             } else {
-                // Only show "Current Trick" if we're not showing a completed trick
-                // Display the cards played in the current trick
-            trickAreaDiv.innerHTML = '<h3>Current Trick</h3>';
+                // Display all players in play order with their cards or waiting indicators
+                trickAreaDiv.innerHTML = '';
                 
                 const currentTrick = data.currentTrick || [];
-                if (currentTrick.length === 0) {
-                    trickAreaDiv.innerHTML += '<p style="color: #ccc; font-size: 1em; margin: 10px 0;">No cards played yet</p>';
+                const playerNames = data.playerNames || {};
+                const allPlayerIds = Object.keys(playerNames);
+                
+                // Determine play order: starts with whoever led (first in currentTrick) or currentTurn if no cards played
+                let playOrder = [];
+                let leaderId = currentTrick.length > 0 ? currentTrick[0].playerId : data.currentTurn;
+                
+                // Build play order starting from leader
+                const leaderIndex = allPlayerIds.indexOf(String(leaderId));
+                if (leaderIndex !== -1) {
+                    for (let i = 0; i < allPlayerIds.length; i++) {
+                        playOrder.push(allPlayerIds[(leaderIndex + i) % allPlayerIds.length]);
+                    }
                 } else {
+                    playOrder = allPlayerIds;
+                }
+                
+                // Create a map of who has played what
+                const playedCards = {};
+                currentTrick.forEach(({ playerId, card }) => {
+                    playedCards[playerId] = card;
+                });
+                
                     const trickCardsDiv = document.createElement('div');
                     trickCardsDiv.className = 'trick-cards';
-                    currentTrick.forEach(({ playerId, card }) => {
+                
+                playOrder.forEach(pid => {
                         const cardWrapper = document.createElement('div');
-                        cardWrapper.style.textAlign = 'center';
-                        
-                        const isMe = playerId == currentPlayerId;
-                        const playerLabel = isMe ? 'You' : (data.playerNames ? data.playerNames[playerId] : 'P' + playerId);
+                    cardWrapper.className = 'player-slot';
+                    
+                    const isMe = pid == currentPlayerId;
+                    const isBidWinner = pid == data.highestBidder;
+                    const isCurrentTurn = pid == data.currentTurn;
+                    let playerLabel = isMe ? 'You' : (playerNames[pid] || `P${pid}`);
+                    
+                    // Add star for bid winner
+                    if (isBidWinner) {
+                        playerLabel += ' ★';
+                    }
+                    
+                    // Add arrow for current turn
+                    if (isCurrentTurn && !playedCards[pid]) {
+                        playerLabel = '→ ' + playerLabel;
+                    }
                         
                         // Player name above card
                         const nameLabel = document.createElement('div');
-                        nameLabel.style.marginBottom = '5px';
-                        nameLabel.style.color = '#ccc';
-                        nameLabel.style.fontSize = '0.9em';
+                    nameLabel.className = 'player-name';
+                    if (isCurrentTurn && !playedCards[pid]) {
+                        nameLabel.classList.add('current-turn');
+                    }
+                    if (isBidWinner) {
+                        nameLabel.classList.add('bid-winner');
+                    }
                         nameLabel.innerText = playerLabel;
                         cardWrapper.appendChild(nameLabel);
                         
-                        // The card
+                    // The card or waiting indicator
+                    if (playedCards[pid]) {
                 const cardElement = document.createElement('div');
                         cardElement.className = 'card played-card';
-                        cardElement.innerHTML = formatCard(card);
+                        cardElement.innerHTML = formatCard(playedCards[pid]);
                         cardWrapper.appendChild(cardElement);
+                    } else {
+                        const waitingCard = document.createElement('div');
+                        waitingCard.className = 'waiting-card';
+                        waitingCard.innerText = '?';
+                        cardWrapper.appendChild(waitingCard);
+                    }
                         
                         trickCardsDiv.appendChild(cardWrapper);
                     });
+                
                     trickAreaDiv.appendChild(trickCardsDiv);
-                }
             }
 
             // Only show turn message if not displaying trick complete
