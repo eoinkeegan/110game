@@ -1427,6 +1427,9 @@ if ($method === 'POST' && $endpoint === 'createGame') {
             throw new Exception('Player name is required to create a game.');
         }
         
+        // Limit player name to 10 characters
+        $playerName = substr($playerName, 0, 10);
+        
         $gameCode = generateGameCode();
         $stmt = $db->prepare("INSERT INTO games (code, state) VALUES (?, '{}')");
         $stmt->execute([$gameCode]);
@@ -1458,6 +1461,9 @@ if ($method === 'POST' && $endpoint === 'joinGame') {
         if (!$gameCode || !$playerName) {
             throw new Exception('Invalid input: game code or player name is invalid.');
         }
+        
+        // Limit player name to 10 characters
+        $playerName = substr($playerName, 0, 10);
 
         $stmt = $db->prepare("SELECT game_id FROM games WHERE code = ?");
         $stmt->execute([$gameCode]);
