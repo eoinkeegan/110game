@@ -909,6 +909,10 @@
         // Function to process a bid
         function processBid(bidAmount) {
             playSound('bid');
+            // Immediately show waiting message to prevent flash of unstyled content
+            const biddingArea = document.getElementById('bidding-area');
+            biddingArea.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Processing bid...</p>';
+            
             fetch(`${API_URL}?endpoint=processBid`, {
                 method: 'POST',
                 headers: {
@@ -920,13 +924,14 @@
                 .then(data => {
                     if (data.error) {
                         document.getElementById('game-message').innerText = `Error: ${data.error}`;
+                        fetchGameState(); // Restore proper UI
                     } else {
-                        document.getElementById('game-message').innerText = 'Bid processed successfully!';
-                        fetchBiddingState(); // Refresh the bidding state
+                        fetchGameState(); // Refresh with proper styled UI
                     }
                 })
                 .catch(error => {
                     document.getElementById('game-message').innerText = `Error: ${error.message}`;
+                    fetchGameState();
                 });
         }
 
@@ -1218,7 +1223,7 @@
             document.getElementById('trick-area').innerHTML = '';
             document.getElementById('trump-selection').innerHTML = '';
             document.getElementById('confirm-selection').innerHTML = '';
-            document.getElementById('game-message').innerHTML = '<p style="color: #888; font-size: 0.85em;">Next round has started. Take your time reviewing.</p>';
+            document.getElementById('game-message').innerHTML = '';
             
             // Add click handler - just acknowledge locally, don't call backend
             document.getElementById('continue-round-btn').addEventListener('click', () => {
@@ -1232,7 +1237,7 @@
             let summaryHtml = `
                 <div style="text-align: center; padding: 10px;">
                     <h2 style="font-size: 1.2em; margin-bottom: 8px;">📊 Round ${roundNumber} Complete</h2>
-                    ${isPrevious ? '<p style="color: #fbbf24; font-size: 0.8em; margin-bottom: 8px;">⏸️ Catch up - others have moved on</p>' : ''}
+                    ${isPrevious ? '<p style="color: #fbbf24; font-size: 0.8em; margin-bottom: 8px;">Next round has started - press continue</p>' : ''}
                     <p style="color: #888; margin-bottom: 8px; font-size: 0.9em;">
                         ${bidWinnerName} bid ${summary.bid} and ${summary.bidMade ? '✅ made it!' : '❌ failed!'}
                     </p>
@@ -1259,11 +1264,13 @@
                         </thead>
                         <tbody>`;
             
-            // Add row for each player
-            for (const [pid, tricks] of Object.entries(summary.tricksWon || {})) {
+            // Add row for each player (use playerNames to ensure all players shown)
+            const allPlayerIds = Object.keys(playerNames);
+            for (const pid of allPlayerIds) {
                 const name = playerNames[pid] || `Player ${pid}`;
-                const roundPoints = summary.roundPoints[pid] || 0;
-                const totalScore = summary.totalScores[pid] || 0;
+                const tricks = (summary.tricksWon && summary.tricksWon[pid]) || 0;
+                const roundPoints = (summary.roundPoints && summary.roundPoints[pid]) || 0;
+                const totalScore = (summary.totalScores && summary.totalScores[pid]) || 0;
                 const isBidWinner = pid == summary.bidWinner;
                 const pointsColor = roundPoints >= 0 ? '#22c55e' : '#ef4444';
                 
@@ -1321,28 +1328,95 @@
         // Function to update the bidding area
         function updateBiddingArea(data) {
             const biddingArea = document.getElementById('bidding-area');
-            biddingArea.innerHTML = '<h3>Bidding Phase</h3>';
+            biddingArea.innerHTML = '';
             
             // Get dealer info
-            const players = Object.keys(data.playerNames || {});
+            const playerNames = data.playerNames || {};
+            const allPlayerIds = Object.keys(playerNames);
             const dealerIndex = data.dealer ?? 0;
-            const dealerId = players[dealerIndex];
-            const dealerName = data.playerNames ? data.playerNames[dealerId] : `Player ${dealerIndex}`;
+            const dealerId = allPlayerIds[dealerIndex];
+            const dealerName = playerNames[dealerId] || `Player ${dealerIndex}`;
             const isDealer = dealerId == currentPlayerId;
+            const passedPlayers = data.passedPlayers || [];
+            const playerBids = data.playerBids || {};
             
-            // Show dealer info
-            const dealerInfo = document.createElement('p');
-            dealerInfo.style.color = '#888';
-            dealerInfo.style.fontSize = '0.9em';
-            dealerInfo.innerHTML = isDealer 
-                ? '🎴 <span style="color: #d4af37;">You are the dealer</span>' 
-                : `🎴 Dealer: ${dealerName}`;
-            biddingArea.appendChild(dealerInfo);
-
-            // Display the current bid
-            const currentBid = document.createElement('p');
-            currentBid.innerText = `Current Bid: ${data.currentBid || 0}`;
-            biddingArea.appendChild(currentBid);
+            // Determine bidding order: starts left of dealer
+            const firstBidderIndex = (dealerIndex + 1) % allPlayerIds.length;
+            let biddingOrder = [];
+            for (let i = 0; i < allPlayerIds.length; i++) {
+                biddingOrder.push(allPlayerIds[(firstBidderIndex + i) % allPlayerIds.length]);
+            }
+            
+            // Show players in bidding order with their status
+            const playersContainer = document.createElement('div');
+            playersContainer.className = 'trick-cards';
+            playersContainer.style.marginBottom = '15px';
+            
+            biddingOrder.forEach(pid => {
+                const playerSlot = document.createElement('div');
+                playerSlot.className = 'player-slot';
+                
+                const isMe = pid == currentPlayerId;
+                const isPlayerDealer = pid == dealerId;
+                const isCurrentBidder = pid == data.currentBidder;
+                let playerLabel = isMe ? 'You' : (playerNames[pid] || `Player ${pid}`);
+                
+                // Add 🎴 for dealer
+                if (isPlayerDealer) {
+                    playerLabel += ' 🎴';
+                }
+                
+                // Add arrow for current bidder
+                if (isCurrentBidder) {
+                    playerLabel = '→ ' + playerLabel;
+                }
+                
+                // Player name
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'player-name';
+                if (isCurrentBidder) {
+                    nameLabel.classList.add('current-turn');
+                }
+                nameLabel.innerText = playerLabel;
+                playerSlot.appendChild(nameLabel);
+                
+                // Bid status indicator (square box)
+                const bidStatus = document.createElement('div');
+                bidStatus.style.cssText = 'width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border: 2px solid #555; border-radius: 6px; background: #2a2a2a; font-size: 16px; font-weight: bold;';
+                
+                // Determine bid status
+                const hasPassed = passedPlayers.includes(pid) || passedPlayers.includes(parseInt(pid));
+                const bidAmount = playerBids[pid];
+                
+                if (hasPassed) {
+                    bidStatus.innerText = 'Pass';
+                    bidStatus.style.color = '#888';
+                } else if (bidAmount !== undefined && bidAmount > 0) {
+                    bidStatus.innerText = bidAmount;
+                    bidStatus.style.color = '#d4af37';
+                } else {
+                    bidStatus.innerText = '?';
+                    bidStatus.style.color = '#666';
+                }
+                
+                playerSlot.appendChild(bidStatus);
+                playersContainer.appendChild(playerSlot);
+            });
+            
+            biddingArea.appendChild(playersContainer);
+            
+            // Show current bid info bar (similar to trick display)
+            const infoBar = document.createElement('p');
+            infoBar.style.color = '#888';
+            infoBar.style.margin = '10px 0';
+            infoBar.style.textAlign = 'center';
+            infoBar.innerHTML = `Current Bid: <span style="color: #d4af37; font-weight: bold;">${data.currentBid || 0}</span>`;
+            if (data.highestBidder && data.currentBid > 0) {
+                const highBidderName = playerNames[data.highestBidder] || 'Unknown';
+                const isHighBidderMe = data.highestBidder == currentPlayerId;
+                infoBar.innerHTML += ` by <span style="color: ${isHighBidderMe ? '#4ade80' : '#ccc'};">${isHighBidderMe ? 'You' : highBidderName}</span>`;
+            }
+            biddingArea.appendChild(infoBar);
 
             // Show if it's your turn
             const isMyTurn = data.currentBidder == currentPlayerId;
@@ -1350,6 +1424,7 @@
             const bidderName = data.playerNames ? data.playerNames[data.currentBidder] : `Player ${data.currentBidder}`;
             turnInfo.innerText = isMyTurn ? "Your turn to bid" : `Waiting for ${bidderName} to bid`;
             turnInfo.style.fontWeight = isMyTurn ? 'bold' : 'normal';
+            turnInfo.style.textAlign = 'center';
             biddingArea.appendChild(turnInfo);
 
             // Display valid bid options (only if it's your turn)
@@ -1396,7 +1471,7 @@
             // Show player's hand during bidding
             if (data.players && data.players[currentPlayerId]) {
                 const handDiv = document.createElement('div');
-                handDiv.innerHTML = '<h4>Your Hand:</h4>';
+                handDiv.style.marginTop = '25px';
                 const cardsDiv = document.createElement('div');
                 cardsDiv.className = 'cards-container';
                 const biddingCards = sortCards ? sortCardsByRank(data.players[currentPlayerId], null) : data.players[currentPlayerId];
@@ -1444,7 +1519,6 @@
                         <div style="text-align: center; padding: 40px;">
                             <h3>✅ Kitty Selection Complete</h3>
                             <p style="color: #ffd700; margin-top: 15px;">Trump: ${formatTrumpSuit(data.trumpSuit)}</p>
-                            <p style="color: #ccc; margin-top: 10px;">Other players are now swapping cards...</p>
                             ${swapStatusHtml}
                             ${stillSwapping.length > 0 ? `<p style="color: #888; font-size: 14px; margin-top: 10px;">Still swapping: ${waitingFor}</p>` : ''}
                             <p style="color: #888; font-size: 14px; margin-top: 20px;">The game will continue automatically</p>
@@ -1458,7 +1532,7 @@
                 const kittyCards = data.kitty || [];
                 const playerHand = data.players ? data.players[currentPlayerId] : [];
                 displayKittyAndTrumpSelection(kittyCards, playerHand);
-                document.getElementById('game-message').innerText = '📢 You won the bid. Select 5 cards to keep and choose trump';
+                document.getElementById('game-message').innerText = '';
                 }
             } else {
                 // Non-bid-winner flow
@@ -1572,7 +1646,7 @@
                             : 'No cards selected (you can keep your current hand)'}
                     </p>
                     <button onclick="submitSwap()" class="btn-primary" style="padding: 12px 30px; font-size: 16px;">
-                        ${swapSelectedCards.length > 0 ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` : 'Keep Current Hand'}
+                        ${swapSelectedCards.length > 0 ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` : 'Swap 0 Cards'}
                     </button>
                 </div>
             `;
@@ -1611,7 +1685,7 @@
             if (btn) {
                 btn.innerText = swapSelectedCards.length > 0 
                     ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` 
-                    : 'Keep Current Hand';
+                    : 'Swap 0 Cards';
             }
             
             // Update status text
@@ -1645,7 +1719,7 @@
                         btn.disabled = false;
                         btn.innerText = swapSelectedCards.length > 0 
                             ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` 
-                            : 'Keep Current Hand';
+                            : 'Swap 0 Cards';
                     }
                 } else {
                     hasCompletedSwap = true;
@@ -1666,7 +1740,7 @@
                     btn.disabled = false;
                     btn.innerText = swapSelectedCards.length > 0 
                         ? `Swap ${swapSelectedCards.length} Card${swapSelectedCards.length > 1 ? 's' : ''}` 
-                        : 'Keep Current Hand';
+                        : 'Swap 0 Cards';
                 }
             });
         }
@@ -1870,13 +1944,32 @@
                 winnerMsg.innerText = `${isWinnerMe ? 'You win' : winnerName + ' wins'} the trick!`;
                 trickAreaDiv.appendChild(winnerMsg);
                 
-                if (isWinnerMe) {
+                // Check if this was the last trick (trick 5)
+                const playerCards = data.players ? data.players[currentPlayerId] : [];
+                const isLastTrick = (data.tricksPlayed >= 5) || (!playerCards || playerCards.length === 0);
+                
+                if (isLastTrick) {
+                    // Show continue button for round summary
+                    gameMessageDiv.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.innerText = 'Continue to Round Summary →';
+                    continueBtn.style.cssText = 'margin-top: 15px; padding: 12px 25px; font-size: 16px; background: #d4af37; color: #1a1a1a; border: none; border-radius: 8px; cursor: pointer;';
+                    continueBtn.addEventListener('click', () => {
+                        // Trigger round summary
+                        fetch(`${API_URL}?endpoint=continueRound`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `gameId=${gameId}`
+                        }).then(() => fetchGameState());
+                    });
+                    trickAreaDiv.appendChild(continueBtn);
+                } else if (isWinnerMe) {
                     gameMessageDiv.innerText = '📢 Tap a card to lead the next trick';
                 } else {
                     gameMessageDiv.innerText = `📢 Waiting for ${winnerName} to play`;
                 }
                 
-                // Don't auto-advance - winner must play their next card
+                // Don't auto-advance - winner must play their next card (unless last trick)
                 // But still show the winner's hand so they can play
             } else {
                 // Display all players in play order with their cards or waiting indicators
@@ -1986,7 +2079,7 @@
                     isLowerThanQueenOfTrumps(currentTrick, data.trumpSuit)) {
                     const tauntDiv = document.createElement('div');
                     tauntDiv.className = 'taunt-message';
-                    tauntDiv.innerHTML = `<em style="color: #d4af37; font-size: 0.9em;">🎩 "Never send a boy to do a man's job"</em>`;
+                    tauntDiv.innerHTML = `<em style="color: #d4af37; font-size: 0.9em;">"Never send a boy to do a man's job"</em>`;
                     trickAreaDiv.appendChild(tauntDiv);
                 }
             }
@@ -2017,7 +2110,7 @@
                 
                 const displayCards = sortCards ? sortCardsByRank(myCards, data.trumpSuit) : myCards;
                 displayCards.forEach(card => {
-                    const cardElement = document.createElement('div');
+                const cardElement = document.createElement('div');
                     cardElement.className = 'card hand-card';
                     cardElement.innerHTML = formatCard(card);
                     cardElement.dataset.card = card; // Add data attribute for reliable matching
@@ -2037,12 +2130,12 @@
                             cardElement.classList.add('selected');
                             selectedCardElement = cardElement;
                         }
-                    } else {
+                } else {
                         cardElement.classList.add('disabled');
-                    }
+                }
 
                     cardsContainer.appendChild(cardElement);
-                });
+            });
                 playerHandsDiv.appendChild(cardsContainer);
                 
                 // Preserve confirm button if card is still selected
@@ -2056,7 +2149,7 @@
                     `;
                 } else if (!isMyTurn || !myCards.includes(selectedCardToPlay)) {
                     // Clear selection if not our turn or card no longer in hand
-                    document.getElementById('confirm-selection').innerHTML = '';
+            document.getElementById('confirm-selection').innerHTML = '';
                     selectedCardToPlay = null;
                     selectedCardElement = null;
                 }
@@ -2114,7 +2207,7 @@
 
             // Display trump suit selection
             const trumpSelectionDiv = document.getElementById('trump-selection');
-            trumpSelectionDiv.innerHTML = '<h3>Select Trump Suit</h3>';
+            trumpSelectionDiv.innerHTML = '';
             
             const trumpButtonsContainer = document.createElement('div');
             trumpButtonsContainer.style.cssText = 'display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 8px 0;';
@@ -2140,7 +2233,12 @@
                     background: rgba(255, 255, 255, 0.95);
                     color: ${isRed ? '#dc2626' : '#1a1a1a'};
                     transition: all 0.2s ease;
-                    min-width: 70px;
+                    width: 70px;
+                    height: 70px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
                 `;
                 suitButton.addEventListener('mouseenter', () => {
                     if (!suitButton.classList.contains('selected-trump')) {

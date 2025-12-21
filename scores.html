@@ -242,7 +242,9 @@
             }
             
             try {
-                const API_URL = window.APP_CONFIG?.GAME_SERVER_URL || 'game-sqlite.php';
+                // Build the correct API URL - add /game-sqlite.php to CloudFront URL
+                const baseUrl = window.APP_CONFIG?.GAME_SERVER_URL;
+                const API_URL = baseUrl ? `${baseUrl}/game-sqlite.php` : 'game-sqlite.php';
                 const response = await fetch(`${API_URL}?endpoint=getGameState&gameId=${session.gameId}&playerId=${session.playerId}`);
                 const data = await response.json();
                 

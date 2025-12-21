@@ -361,6 +361,7 @@ function startBidding($gameId) {
     $state['highestBidder'] = null;
     $state['validBids'] = [15, 20, 25, 30];
     $state['passedPlayers'] = [];
+    $state['playerBids'] = [];  // Track each player's bid amount (0 = passed, null = hasn't bid)
     $state['biddingOver'] = false;
     $state['dealerMustBid'] = false;
     $state['dealerCanMatch'] = false;
@@ -421,6 +422,9 @@ function processBid($gameId, $playerId, $bidAmount) {
         if (!in_array($playerId, $state['passedPlayers'])) {
             $state['passedPlayers'][] = $playerId;
         }
+        // Track this player's bid (0 = passed)
+        if (!isset($state['playerBids'])) $state['playerBids'] = [];
+        $state['playerBids'][$playerId] = 0;
     } else {
         $dealerMatched = false;
         if ($isDealer && $bidAmount == $state['currentBid'] && $state['currentBid'] > 0) {
@@ -440,6 +444,9 @@ function processBid($gameId, $playerId, $bidAmount) {
 
         $state['currentBid'] = $bidAmount;
         $state['highestBidder'] = $playerId;
+        // Track this player's bid amount
+        if (!isset($state['playerBids'])) $state['playerBids'] = [];
+        $state['playerBids'][$playerId] = $bidAmount;
         
         if ($dealerMatched) {
             $state['biddingOver'] = true;
@@ -1385,6 +1392,7 @@ function startNewRound($gameId) {
     $state['highestBidder'] = null;
     $state['validBids'] = [15, 20, 25, 30];
     $state['passedPlayers'] = [];
+    $state['playerBids'] = [];  // Reset player bids for new round
     $state['biddingOver'] = false;
     $state['trumpSuit'] = null;
     $state['dealerMustBid'] = false;

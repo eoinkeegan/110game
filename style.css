@@ -551,19 +551,20 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2em;
+    font-size: 1.5em;
     font-weight: bold;
-    background: linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%);
-    border: 2px dashed #555;
-    color: #555;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    color: #666;
+    background: linear-gradient(135deg, #3a3a5a 0%, #2a2a3e 100%);
+    border: 2px solid #555;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .player-slot {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    min-width: 70px;
 }
 
 .player-slot .player-name {
@@ -1030,8 +1031,12 @@ body.statistics-page #game-details {
     }
     
     /* Consistent player name sizing on mobile */
+    .player-slot {
+        min-width: 50px;
+    }
+    
     .player-slot .player-name {
         font-size: 12px;
-        max-width: 70px;
+        max-width: 60px;
     }
 }
