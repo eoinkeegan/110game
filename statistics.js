@@ -82,14 +82,11 @@ function fetchGameHistory() {
                             <li class="game-item" data-game-id="${sanitizeInput(game.game_id)}">
                                 <button class="delete-x-btn" onclick="deleteGame(${sanitizeInput(game.game_id)}, event)" title="Delete game">×</button>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span>
-                                        <strong>Game #${sanitizeInput(game.game_id)}</strong>
-                                        (${sanitizeInput(game.code)})
-                                    </span>
+                                    <strong>${sanitizeInput(game.code)}</strong>
                                 </div>
                                 <div style="margin-top: 5px; font-size: 14px; color: #ccc;">
                                     ${game.winner ? `🏆 Winner: <strong>${sanitizeInput(game.winner)}</strong>` : ''}
-                                    ${game.rounds ? ` | ${sanitizeInput(game.rounds)} rounds played` : ''}
+                                    ${game.rounds ? ` | ${sanitizeInput(game.rounds)} rounds` : ''}
                                 </div>
                             </li>
                         `;
@@ -152,96 +149,6 @@ function deleteGame(gameId, event) {
         console.error('Delete error:', error);
         alert('Failed to delete game');
     });
-}
-
-// Fetch and display game details
-function fetchGameDetails(gameId) {
-    fetch(`${STATS_API_URL}?endpoint=getGameDetails&gameId=${sanitizeInput(gameId)}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Error fetching game details for Game ID ${gameId}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            const gameDetailsDiv = document.getElementById('game-details');
-            
-            if (data.error) {
-                gameDetailsDiv.innerHTML = `<h2>Game Details</h2><p>Error: ${sanitizeInput(data.error)}</p>`;
-                return;
-            }
-            
-            if (!data.rounds || data.rounds.length === 0) {
-                gameDetailsDiv.innerHTML = `
-                    <h2>Game Details</h2>
-                    <h3>Game #${sanitizeInput(gameId)}</h3>
-                    <p>No round details available for this game. (Game may still be in progress)</p>
-                `;
-                return;
-            }
-            
-            // Build winner display
-            let winnerHtml = '';
-            if (data.gameWinner) {
-                winnerHtml = `<p style="color: #22c55e; font-size: 1.1em;">🏆 Winner: <strong>${sanitizeInput(data.gameWinner)}</strong></p>`;
-            }
-            
-            // Build final scores
-            let scoresHtml = '';
-            if (data.finalScores && Object.keys(data.finalScores).length > 0) {
-                const sortedScores = Object.entries(data.finalScores)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([pid, score]) => {
-                        const name = data.playerNames[pid] || `Player ${pid}`;
-                        return `<span style="margin-right: 15px;">${sanitizeInput(name)}: <strong>${score}</strong></span>`;
-                    }).join('');
-                scoresHtml = `<p style="margin-bottom: 15px;">Final Scores: ${sortedScores}</p>`;
-            }
-
-            gameDetailsDiv.innerHTML = `
-                <h2>Game Details - Game #${sanitizeInput(gameId)}</h2>
-                ${winnerHtml}
-                ${scoresHtml}
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #d4af37; text-align: left;">
-                            <th style="padding: 8px;">Round</th>
-                            <th style="padding: 8px;">Bid Winner</th>
-                            <th style="padding: 8px;">Bid</th>
-                            <th style="padding: 8px;">Trump</th>
-                            <th style="padding: 8px;">Result</th>
-                            <th style="padding: 8px;">Points</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.rounds.map(round => {
-                            const forcedTag = round.forcedBid ? ' <span style="color: #eab308; font-size: 0.8em;">(forced)</span>' : '';
-                            const resultText = round.bidMade === true ? '✅ Made' : (round.bidMade === false ? '❌ Failed' : '-');
-                            const resultColor = round.bidMade === true ? '#22c55e' : (round.bidMade === false ? '#ef4444' : '#888');
-                            const trumpColor = round.trumpSuit === '♥' || round.trumpSuit === '♦' ? '#ef4444' : '#fff';
-                            const points = round.bidWinnerPoints !== undefined ? (round.bidWinnerPoints >= 0 ? '+' + round.bidWinnerPoints : round.bidWinnerPoints) : '-';
-                            const pointsColor = round.bidWinnerPoints >= 0 ? '#22c55e' : '#ef4444';
-                            
-                            return `
-                                <tr style="border-bottom: 1px solid #444;">
-                                    <td style="padding: 8px;">${sanitizeInput(round.roundNumber)}</td>
-                                    <td style="padding: 8px;">${sanitizeInput(round.bidWinner)}${forcedTag}</td>
-                                    <td style="padding: 8px;">${sanitizeInput(round.bid) || '-'}</td>
-                                    <td style="padding: 8px; color: ${trumpColor}; font-size: 1.2em;">${round.trumpSuit || '-'}</td>
-                                    <td style="padding: 8px; color: ${resultColor};">${resultText}</td>
-                                    <td style="padding: 8px; color: ${pointsColor};">${points}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            `;
-        })
-        .catch(error => {
-            console.error(error);
-            const gameDetailsDiv = document.getElementById('game-details');
-            gameDetailsDiv.innerHTML = `<h2>Game Details</h2><p>Failed to load details for Game #${sanitizeInput(gameId)}.</p>`;
-        });
 }
 
 // Seed sample data for demo

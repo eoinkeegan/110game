@@ -1052,7 +1052,11 @@
             document.getElementById('trump-selection').style.display = 'block';
             document.getElementById('confirm-selection').style.display = 'block';
             showGameControls(); // Show emoji panel
-            document.getElementById('game-message').innerText = ''; // Clear old messages
+            // Only clear messages if no recent error (respect ERROR_DISPLAY_DURATION)
+            const timeSinceError = Date.now() - lastErrorTime;
+            if (timeSinceError > ERROR_DISPLAY_DURATION) {
+                document.getElementById('game-message').innerText = '';
+            }
         }
         
         // Function to display game over screen with final scores
@@ -1664,16 +1668,20 @@
                 swapSelectedCards.splice(index, 1);
                 element.classList.remove('selected');
             } else if (swapSelectedCards.length < maxSwap) {
-                // Select
+                // Select (under limit)
                 swapSelectedCards.push(card);
                 element.classList.add('selected');
             } else {
-                // At max - show message
-                document.getElementById('game-message').innerText = `⚠️ You can only swap up to ${maxSwap} cards`;
-                setTimeout(() => {
-                    document.getElementById('game-message').innerText = '';
-                }, 2000);
-                return;
+                // At max - auto-deselect the first selected card and select the new one
+                const removedCard = swapSelectedCards.shift(); // Remove first (oldest) selection
+                // Find and deselect the old card visually
+                const oldCardEl = document.querySelector(`#player-hands .card[data-card="${removedCard}"]`);
+                if (oldCardEl) {
+                    oldCardEl.classList.remove('selected');
+                }
+                // Select the new card
+                swapSelectedCards.push(card);
+                element.classList.add('selected');
             }
             
             // Update button text

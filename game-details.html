@@ -213,13 +213,15 @@
                     const gameWinner = data.gameWinner;
                     const finalScores = data.finalScores || {};
                     
-                    // Build header
-                    let html = `
-                        <div class="game-header">
-                            <h1>Game #${gameId}</h1>
-                            ${gameWinner ? `<p class="winner">🏆 Winner: ${gameWinner}</p>` : '<p style="color: #888;">Game in progress</p>'}
-                        </div>
-                    `;
+                    // Build header (only show winner if game is complete)
+                    let html = '';
+                    if (gameWinner) {
+                        html += `
+                            <div class="game-header">
+                                <p class="winner">🏆 Winner: ${gameWinner}</p>
+                            </div>
+                        `;
+                    }
                     
                     if (rounds.length === 0) {
                         html += '<p style="text-align: center; color: #888;">No rounds played yet</p>';
