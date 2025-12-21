@@ -1069,9 +1069,10 @@
             
             const winnerName = data.playerNames ? data.playerNames[data.gameWinner] : `Player ${data.gameWinner}`;
             
-            // Celebrate if current player won!
+            // Confetti for everyone! Sound depends on win/lose
+            createConfetti();
             if (data.gameWinner == currentPlayerId) {
-                celebrate();
+                playSound('win');
             } else {
                 playSound('lose');
             }
@@ -1361,14 +1362,9 @@
                 const isCurrentBidder = pid == data.currentBidder;
                 let playerLabel = isMe ? 'You' : (playerNames[pid] || `Player ${pid}`);
                 
-                // Add 🎴 for dealer
+                // Add (D) for dealer
                 if (isPlayerDealer) {
-                    playerLabel += ' 🎴';
-                }
-                
-                // Add arrow for current bidder
-                if (isCurrentBidder) {
-                    playerLabel = '→ ' + playerLabel;
+                    playerLabel += ' (D)';
                 }
                 
                 // Player name
@@ -1555,7 +1551,7 @@
                 container.innerHTML = `
                         <div style="text-align: center; padding: 20px;">
                         <h3>⏳ Waiting for ${bidderName}</h3>
-                        <p style="color: #ccc; margin-top: 10px;">${bidderName} is selecting cards from the kitty and choosing trump</p>
+                        <p style="color: #ccc; margin-top: 10px;">${bidderName} went and is selecting cards from the kitty and choosing trump</p>
                             <p style="color: #ffd700; font-size: 14px; margin-top: 15px;">Once trump is selected, you'll be able to swap cards</p>
                         </div>
                         <h4 style="margin-top: 20px;">Your Current Hand:</h4>
@@ -2014,11 +2010,6 @@
                     // Add star for bid winner
                     if (isBidWinner) {
                         playerLabel += ' ★';
-                    }
-                    
-                    // Add arrow for current turn
-                    if (isCurrentTurn && !playedCards[pid]) {
-                        playerLabel = '→ ' + playerLabel;
                     }
                         
                         // Player name above card

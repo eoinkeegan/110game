@@ -938,15 +938,13 @@ function playCard($gameId, $playerId, $card) {
         $updatedGameState = $stmt->fetch();
         $state = json_decode($updatedGameState['state'], true);
         
-        // Check if round is complete
+        // Check if round is complete - set flag but DON'T auto-transition to round_summary
+        // The frontend will show "Continue to Round Summary" button
         if (($state['tricksPlayed'] ?? 0) >= 5) {
-            scoreRound($gameId);
-            
-            // Fetch updated state after scoring
-            $stmt = $db->prepare("SELECT state FROM game_state WHERE game_id = ?");
-            $stmt->execute([$gameId]);
-            $updatedGameState = $stmt->fetch();
-            $state = json_decode($updatedGameState['state'], true);
+            $state['roundComplete'] = true;
+            $updatedStateJson = json_encode($state);
+            $stmt = $db->prepare("UPDATE game_state SET state = ? WHERE game_id = ?");
+            $stmt->execute([$updatedStateJson, $gameId]);
         }
     } else {
         $currentIndex = array_search($playerId, $playerIds);
@@ -1398,6 +1396,7 @@ function startNewRound($gameId) {
     $state['dealerMustBid'] = false;
     $state['dealerCanMatch'] = false;
     $state['forcedDealerBid'] = false;
+    $state['roundComplete'] = false;  // Reset round complete flag
     
     $state['finalScores'] = $preservedFinalScores;
     $state['roundNumber'] = $preservedRoundNumber;
@@ -1758,8 +1757,31 @@ if ($method === 'POST' && $endpoint === 'playCard') {
 if ($method === 'POST' && $endpoint === 'continueRound') {
     if (isset($_POST['gameId'])) {
         try {
-            continueToNextRound(intval($_POST['gameId']));
-            echo json_encode(['success' => 'Next round started']);
+            $gameId = intval($_POST['gameId']);
+            
+            // Check current state
+            $stmt = $db->prepare("SELECT state FROM game_state WHERE game_id = ?");
+            $stmt->execute([$gameId]);
+            $gameState = $stmt->fetch();
+            
+            if (!$gameState) {
+                throw new Exception("Game not found");
+            }
+            
+            $state = json_decode($gameState['state'], true);
+            
+            // If round is complete but not yet scored (still in trick phase), score it now
+            if (($state['phase'] ?? '') === 'trick' && ($state['roundComplete'] ?? false)) {
+                scoreRound($gameId);
+                echo json_encode(['success' => 'Round scored', 'phase' => 'round_summary']);
+            } 
+            // If already in round_summary, continue to next round
+            else if (($state['phase'] ?? '') === 'round_summary') {
+                continueToNextRound($gameId);
+                echo json_encode(['success' => 'Next round started']);
+            } else {
+                echo json_encode(['error' => 'Not ready to continue']);
+            }
         } catch (Exception $e) {
             echo json_encode(['error' => $e->getMessage()]);
         }
@@ -1955,22 +1977,27 @@ if ($method === 'GET' && $endpoint === 'getGameDetails') {
             $playerNames[$player['player_id']] = $player['name'];
         }
         
-        // Build rounds info
+        // Build rounds info with scores after each round
         $rounds = [];
+        
         if (isset($state['roundHistory']) && is_array($state['roundHistory'])) {
             foreach ($state['roundHistory'] as $index => $round) {
                 $bidWinnerName = isset($round['bidWinner']) && isset($playerNames[$round['bidWinner']]) 
                     ? $playerNames[$round['bidWinner']] 
                     : 'Unknown';
                 
+                // Get scores after this round (stored in roundHistory)
+                $scoresAfterRound = $round['finalScores'] ?? $round['scores'] ?? [];
+                
                 $rounds[] = [
                     'roundNumber' => $index + 1,
                     'bidWinner' => $bidWinnerName,
+                    'bidWinnerId' => $round['bidWinner'] ?? null,
                     'bid' => $round['bid'] ?? null,
                     'trumpSuit' => $round['trumpSuit'] ?? null,
                     'forcedBid' => $round['forcedBid'] ?? false,
                     'bidMade' => $round['bidMade'] ?? null,
-                    'bidWinnerPoints' => $round['bidWinnerPoints'] ?? null
+                    'scoresAfterRound' => $scoresAfterRound
                 ];
             }
         }
@@ -2097,6 +2124,35 @@ if ($method === 'POST' && $endpoint === 'seedSampleData') {
         echo json_encode(['error' => $e->getMessage()]);
         exit;
     }
+}
+
+// Delete game endpoint
+if ($method === 'POST' && $endpoint === 'deleteGame') {
+    if (isset($_POST['gameId'])) {
+        try {
+            $gameId = intval($_POST['gameId']);
+            
+            // Delete from all related tables
+            $stmt = $db->prepare("DELETE FROM cards WHERE game_id = ?");
+            $stmt->execute([$gameId]);
+            
+            $stmt = $db->prepare("DELETE FROM players WHERE game_id = ?");
+            $stmt->execute([$gameId]);
+            
+            $stmt = $db->prepare("DELETE FROM game_state WHERE game_id = ?");
+            $stmt->execute([$gameId]);
+            
+            $stmt = $db->prepare("DELETE FROM games WHERE id = ?");
+            $stmt->execute([$gameId]);
+            
+            echo json_encode(['success' => true, 'message' => 'Game deleted successfully']);
+        } catch (Exception $e) {
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    } else {
+        echo json_encode(['error' => 'Missing gameId parameter']);
+    }
+    exit;
 }
 
 // Default response for unknown endpoints

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Details - 110</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        .page-content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #d4af37;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .game-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .game-header h1 {
+            color: #d4af37;
+            margin: 0 0 10px 0;
+        }
+        
+        .game-header .winner {
+            font-size: 1.2em;
+            color: #4ade80;
+        }
+        
+        .rounds-table-container {
+            overflow-x: auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+        }
+        
+        .rounds-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        .rounds-table th,
+        .rounds-table td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .rounds-table th {
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .rounds-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .rounds-table .result-made {
+            color: #4ade80;
+            font-weight: bold;
+        }
+        
+        .rounds-table .result-missed {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .rounds-table .forced {
+            color: #eab308;
+        }
+        
+        .trump-symbol {
+            font-size: 1.2em;
+        }
+        
+        .trump-red { color: #ef4444; }
+        .trump-black { color: #e5e5e5; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 12px;
+        }
+        
+        .player-score {
+            font-weight: bold;
+        }
+        
+        .score-winner {
+            color: #d4af37;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <a href="index.html" class="logo" style="text-decoration: none;">
+            <div style="text-align: center; line-height: 1.1;">
+                <span style="font-family: system-ui, sans-serif; font-size: 2em; font-weight: 600; color: #d4af37;">110</span>
+                <div style="font-size: 0.65em; letter-spacing: 2px; color: #888; text-transform: uppercase;">Hanley Rules</div>
+            </div>
+        </a>
+        <nav class="burger-menu" id="burger-menu">
+            <button class="burger-btn" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html">🎮 Play Game</a>
+                <a href="scores.html">📊 Scores</a>
+                <a href="rules.html">📖 Rules</a>
+                <a href="statistics.html">📈 Statistics</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-content">
+        <a href="statistics.html" class="back-btn">← Back to Statistics</a>
+        
+        <div id="game-content">
+            <div class="loading">Loading game details...</div>
+        </div>
+    </main>
+
+    <script src="app-config.js"></script>
+    <script>
+        function toggleMenu() {
+            document.getElementById('burger-menu').classList.toggle('open');
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('burger-menu');
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+        
+        // Get game ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('id');
+        
+        // Determine API URL
+        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'game-sqlite.php'
+            : (window.APP_CONFIG?.GAME_SERVER_URL ? window.APP_CONFIG.GAME_SERVER_URL + '/game-sqlite.php' : 'game-sqlite.php');
+        
+        // Trump suit display
+        const trumpSymbols = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠', '♥': '♥', '♦': '♦', '♣': '♣', '♠': '♠' };
+        const trumpNames = { 'H': 'Hearts', 'D': 'Diamonds', 'C': 'Clubs', 'S': 'Spades', '♥': 'Hearts', '♦': 'Diamonds', '♣': 'Clubs', '♠': 'Spades' };
+        
+        function isRedSuit(suit) {
+            return suit === 'H' || suit === 'D' || suit === '♥' || suit === '♦';
+        }
+        
+        function formatTrump(suit) {
+            if (!suit) return '-';
+            const symbol = trumpSymbols[suit] || suit;
+            const colorClass = isRedSuit(suit) ? 'trump-red' : 'trump-black';
+            return `<span class="trump-symbol ${colorClass}">${symbol}</span>`;
+        }
+        
+        function loadGameDetails() {
+            const content = document.getElementById('game-content');
+            
+            if (!gameId) {
+                content.innerHTML = '<div class="error-message">No game ID specified</div>';
+                return;
+            }
+            
+            fetch(`${API_URL}?endpoint=getGameDetails&gameId=${gameId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        content.innerHTML = `<div class="error-message">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    const playerNames = data.playerNames || {};
+                    const playerIds = Object.keys(playerNames);
+                    const rounds = data.rounds || [];
+                    const gameWinner = data.gameWinner;
+                    const finalScores = data.finalScores || {};
+                    
+                    // Build header
+                    let html = `
+                        <div class="game-header">
+                            <h1>Game #${gameId}</h1>
+                            ${gameWinner ? `<p class="winner">🏆 Winner: ${gameWinner}</p>` : '<p style="color: #888;">Game in progress</p>'}
+                        </div>
+                    `;
+                    
+                    if (rounds.length === 0) {
+                        html += '<p style="text-align: center; color: #888;">No rounds played yet</p>';
+                    } else {
+                        // Build table
+                        html += '<div class="rounds-table-container"><table class="rounds-table">';
+                        
+                        // Header row
+                        html += '<thead><tr>';
+                        html += '<th>Round</th>';
+                        html += '<th>Bidder</th>';
+                        html += '<th>Bid</th>';
+                        html += '<th>Forced</th>';
+                        html += '<th>Trump</th>';
+                        html += '<th>Result</th>';
+                        
+                        // Player columns
+                        playerIds.forEach(pid => {
+                            const name = playerNames[pid] || `Player ${pid}`;
+                            html += `<th>${name}</th>`;
+                        });
+                        
+                        html += '</tr></thead>';
+                        
+                        // Data rows
+                        html += '<tbody>';
+                        rounds.forEach(round => {
+                            html += '<tr>';
+                            html += `<td>${round.roundNumber}</td>`;
+                            html += `<td>${round.bidWinner || '-'}</td>`;
+                            html += `<td>${round.bid || '-'}</td>`;
+                            html += `<td>${round.forcedBid ? '<span class="forced">Yes</span>' : 'No'}</td>`;
+                            html += `<td>${formatTrump(round.trumpSuit)}</td>`;
+                            
+                            // Result
+                            if (round.bidMade === true) {
+                                html += '<td class="result-made">Made ✓</td>';
+                            } else if (round.bidMade === false) {
+                                html += '<td class="result-missed">Missed ✗</td>';
+                            } else {
+                                html += '<td>-</td>';
+                            }
+                            
+                            // Player scores after this round
+                            const scores = round.scoresAfterRound || {};
+                            playerIds.forEach(pid => {
+                                const score = scores[pid] ?? '-';
+                                const isWinningScore = score >= 110;
+                                html += `<td class="player-score ${isWinningScore ? 'score-winner' : ''}">${score}</td>`;
+                            });
+                            
+                            html += '</tr>';
+                        });
+                        html += '</tbody>';
+                        html += '</table></div>';
+                    }
+                    
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading game details:', error);
+                    content.innerHTML = '<div class="error-message">Failed to load game details</div>';
+                });
+        }
+        
+        // Load on page ready
+        loadGameDetails();
+    </script>
+</body>
+</html>
+

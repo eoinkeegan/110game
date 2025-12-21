@@ -38,7 +38,6 @@ function fetchOverallStatistics() {
             
             overallStatsDiv.innerHTML = `
                 <h2>Overall Statistics</h2>
-                <p><strong>🎮 Total Games:</strong> ${sanitizeInput(data.totalGames)}</p>
                 <p><strong>✅ Completed Games:</strong> ${sanitizeInput(data.completedGames || 0)}</p>
                 <p><strong>🏆 Top Player:</strong> ${sanitizeInput(data.topPlayer)}</p>
             `;
@@ -67,27 +66,29 @@ function fetchGameHistory() {
                 return;
             }
             
-            if (!data.games || data.games.length === 0) {
-                gameHistoryDiv.innerHTML = `<h2>Game History</h2><p>No games found. Start playing to see game history!</p>`;
+            // Filter to only show completed games
+            const completedGames = (data.games || []).filter(game => game.status === 'Completed');
+            
+            if (completedGames.length === 0) {
+                gameHistoryDiv.innerHTML = `<h2>Game History</h2><p>No completed games yet. Finish a game to see it here!</p>`;
                 return;
             }
 
             gameHistoryDiv.innerHTML = `
                 <h2>Game History</h2>
                 <ul class="game-list">
-                    ${data.games.map(game => {
-                        const statusClass = game.status === 'Completed' ? 'status-completed' : 'status-progress';
+                    ${completedGames.map(game => {
                         return `
                             <li class="game-item" data-game-id="${sanitizeInput(game.game_id)}">
+                                <button class="delete-x-btn" onclick="deleteGame(${sanitizeInput(game.game_id)}, event)" title="Delete game">×</button>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span>
                                         <strong>Game #${sanitizeInput(game.game_id)}</strong>
                                         (${sanitizeInput(game.code)})
                                     </span>
-                                    <span class="${statusClass}">${sanitizeInput(game.status)}</span>
                                 </div>
                                 <div style="margin-top: 5px; font-size: 14px; color: #ccc;">
-                                    ${game.winner ? `🏆 Winner: <strong>${sanitizeInput(game.winner)}</strong>` : 'No winner yet'}
+                                    ${game.winner ? `🏆 Winner: <strong>${sanitizeInput(game.winner)}</strong>` : ''}
                                     ${game.rounds ? ` | ${sanitizeInput(game.rounds)} rounds played` : ''}
                                 </div>
                             </li>
@@ -96,15 +97,12 @@ function fetchGameHistory() {
                 </ul>
             `;
 
-            // Add event listeners to game list items
+            // Add click event listeners to navigate to game details page
             document.querySelectorAll('.game-item').forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-x-btn')) return;
                     const gameId = item.getAttribute('data-game-id');
-                    fetchGameDetails(gameId);
-                    
-                    // Highlight selected item
-                    document.querySelectorAll('.game-item').forEach(i => i.style.background = '');
-                    item.style.background = 'rgba(212, 175, 55, 0.2)';
+                    window.location.href = `game-details.html?id=${gameId}`;
                 });
             });
         })
@@ -113,6 +111,47 @@ function fetchGameHistory() {
             const gameHistoryDiv = document.getElementById('game-history');
             gameHistoryDiv.innerHTML = `<h2>Game History</h2><p>Failed to load game history.</p>`;
         });
+}
+
+// Delete a game with confirmation
+function deleteGame(gameId, event) {
+    event.stopPropagation();
+    
+    if (!confirm('Are you sure you want to delete this game? This cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`${STATS_API_URL}?endpoint=deleteGame`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `gameId=${gameId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the item from DOM with animation
+            const item = document.querySelector(`.game-item[data-game-id="${gameId}"]`);
+            if (item) {
+                item.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
+                item.style.opacity = '0';
+                item.style.height = '0';
+                item.style.padding = '0';
+                item.style.margin = '0';
+                item.style.overflow = 'hidden';
+                setTimeout(() => {
+                    item.remove();
+                    // Refresh stats
+                    fetchOverallStatistics();
+                }, 300);
+            }
+        } else {
+            alert('Failed to delete game: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        alert('Failed to delete game');
+    });
 }
 
 // Fetch and display game details

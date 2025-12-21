@@ -26,6 +26,9 @@ aws s3 cp statistics.html $S3_BUCKET/ --cache-control "max-age=300"
 echo "📄 Uploading scores.html (5 min cache)..."
 aws s3 cp scores.html $S3_BUCKET/ --cache-control "max-age=300"
 
+echo "📄 Uploading game-details.html (5 min cache)..."
+aws s3 cp game-details.html $S3_BUCKET/ --cache-control "max-age=300"
+
 # Upload CSS/JS with longer cache (1 day) - rarely changes
 echo "🎨 Uploading style.css (1 day cache)..."
 aws s3 cp style.css $S3_BUCKET/ --cache-control "max-age=86400"
@@ -52,7 +55,7 @@ aws s3 cp RULES.md $S3_BUCKET/ --cache-control "max-age=86400"
 echo "🔄 Invalidating CloudFront cache..."
 aws cloudfront create-invalidation \
     --distribution-id $CLOUDFRONT_ID \
-    --paths "/index.html" "/rules.html" "/statistics.html" "/scores.html" "/app-config.js" "/style.css"
+    --paths "/index.html" "/rules.html" "/statistics.html" "/scores.html" "/game-details.html" "/statistics.js" "/app-config.js" "/style.css"
 
 echo ""
 echo "✅ S3 deployment complete!"
