@@ -1151,6 +1151,7 @@ function scoreRound($gameId) {
         'totalScores' => $state['finalScores'],
         'highestCardPlayer' => $highestCardPlayer,
         'highestCard' => $highestCard,
+        'highestCardTrick' => $state['highestCardTrick'] ?? 5,
         'bidWinnerForfeitsBonus' => $bidWinnerForfeitsBonus
     ];
     
@@ -1233,10 +1234,12 @@ function determineGameWinner($gameId) {
 
     $playerIds = array_keys($state['players']);
     $trickWinners = $state['trickWinners'] ?? [];
-    $highestCardPlayer = $state['highestCardPlayer'] ?? null;
-    $highestCardTrick = $state['highestCardTrick'] ?? 5;
-    $bidWinner = $state['highestBidder'] ?? null;
     $roundSummary = $state['roundSummary'] ?? null;
+    
+    // Get highestCardPlayer from roundSummary (scoreRound clears it from state)
+    $highestCardPlayer = $roundSummary['highestCardPlayer'] ?? ($state['highestCardPlayer'] ?? null);
+    $highestCardTrick = $roundSummary['highestCardTrick'] ?? ($state['highestCardTrick'] ?? 5);
+    $bidWinner = $state['highestBidder'] ?? null;
     $bidMade = $roundSummary['bidMade'] ?? true;
     $previousScores = [];
     
@@ -2148,7 +2151,7 @@ if ($method === 'POST' && $endpoint === 'deleteGame') {
             $stmt = $db->prepare("DELETE FROM game_state WHERE game_id = ?");
             $stmt->execute([$gameId]);
             
-            $stmt = $db->prepare("DELETE FROM games WHERE id = ?");
+            $stmt = $db->prepare("DELETE FROM games WHERE game_id = ?");
             $stmt->execute([$gameId]);
             
             echo json_encode(['success' => true, 'message' => 'Game deleted successfully']);

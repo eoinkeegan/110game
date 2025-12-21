@@ -570,7 +570,7 @@ button {
 .player-slot .player-name {
     font-size: 14px; /* Fixed size for consistency between trick states */
     color: #888;
-    max-width: 90px;
+    max-width: 120px;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;

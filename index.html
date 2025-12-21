@@ -360,7 +360,7 @@
     <div id="game-container" style="display: none;">
         <form id="game-form">
             <input type="text" id="player-name" placeholder="Enter your name" required maxlength="10">
-            <input type="text" id="game-code" placeholder="e.g. happy-apple" style="text-transform: lowercase;">
+            <input type="text" id="game-code" placeholder="Enter game code" style="text-transform: lowercase;">
             <button type="button" id="create-game">Create Game</button>
             <button type="button" id="join-game">Join Game</button>
         </form>
@@ -1552,10 +1552,11 @@
                     });
                     handHtml += '</div>';
                     
+                const winningBid = data.currentBid || data.winningBid || 15;
                 container.innerHTML = `
                         <div style="text-align: center; padding: 20px;">
                         <h3>⏳ Waiting for ${bidderName}</h3>
-                        <p style="color: #ccc; margin-top: 10px;">${bidderName} went and is selecting cards from the kitty and choosing trump</p>
+                        <p style="color: #ccc; margin-top: 10px;">${bidderName} went ${winningBid} and is selecting cards from the kitty and choosing trump</p>
                             <p style="color: #ffd700; font-size: 14px; margin-top: 15px;">Once trump is selected, you'll be able to swap cards</p>
                         </div>
                         <h4 style="margin-top: 20px;">Your Current Hand:</h4>
@@ -1603,13 +1604,14 @@
                     // Step 2: Trump selected - NOW show swap UI
                     const maxSwap = data.maxSwapCards || 3;
                     const playerHand = data.players ? data.players[currentPlayerId] : [];
-                    displaySwapUI(playerHand, maxSwap, bidderName, data.trumpSuit);
+                    const winningBid = data.currentBid || data.winningBid || 15;
+                    displaySwapUI(playerHand, maxSwap, bidderName, data.trumpSuit, winningBid);
                 }
             }
         }
         
         // Function to display the card swap UI for non-bid-winners
-        function displaySwapUI(playerHand, maxSwap, bidderName, trumpSuit) {
+        function displaySwapUI(playerHand, maxSwap, bidderName, trumpSuit, winningBid) {
             const container = document.getElementById('player-hands');
             
             // Reset swap selection if hand changed
@@ -1618,6 +1620,7 @@
             let html = `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <h3>🔄 Card Swap</h3>
+                    <p style="color: #d4af37; font-size: 16px; margin: 10px 0;">${bidderName} went ${winningBid}</p>
                     <p style="color: #ffd700; font-size: 18px; margin: 10px 0;">Trump: ${formatTrumpSuit(trumpSuit)}</p>
                     <p style="color: #ccc;">Select up to ${maxSwap} cards to swap for new ones from the deck</p>
                 </div>
@@ -1862,17 +1865,18 @@
             
             // Get bid winner info
             const bidWinnerName = data.playerNames && data.highestBidder ? data.playerNames[data.highestBidder] : 'Unknown';
+            const winningBid = data.currentBid || data.winningBid || 15;
             
             // Determine trick number: if trick complete, show that trick number; otherwise show next trick
             const isTrickComplete = data.trickComplete && data.lastCompletedTrick && data.lastCompletedTrick.length > 0;
             const trickNumber = isTrickComplete ? (data.tricksPlayed || 1) : (data.tricksPlayed || 0) + 1;
             
-            // Build info bar: Trump: ♠ Spades | Trick 3 of 5 | Mike went
+            // Build info bar: Trump: ♠ Spades | Trick 3 of 5 | Mike went 25
             trumpDiv.innerHTML = `
                 <p style="color: #888; margin: 0;">
                     Trump: <span style="color: ${trumpColor}; font-weight: bold;">${trumpSymbols[data.trumpSuit]} ${suitNames[data.trumpSuit]}</span>
                     &nbsp;|&nbsp; Trick ${trickNumber} of 5
-                    &nbsp;|&nbsp; ${bidWinnerName} went
+                    &nbsp;|&nbsp; ${bidWinnerName} went ${winningBid}
                 </p>
             `;
             
@@ -2903,7 +2907,7 @@
                 <p style="font-size: 0.9em; color: #888;">Note: Aces are LOW in non-trump!</p>
                 
                 <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">🔒 Reneging</h3>
-                <p>The <strong>top 4 trumps</strong> (5, J, Joker, A♥) can "renege" - they don't have to follow suit unless a higher reneging card <strong>leads</strong> the trick.</p>
+                <p>The <strong>top 4 trumps</strong> (5, J, Joker, A♥) can "renege" - they don't have to follow suit unless a higher trump card <strong>leads</strong> the trick.</p>
                 <p style="font-size: 0.9em; color: #888;">Example: If 5 of trump leads and you have the Jack of trump, you must play it. But if King leads, you can hold back your Jack!</p>
                 
                 <h3 style="color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 20px;">📊 Scoring</h3>
